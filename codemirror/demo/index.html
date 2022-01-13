@@ -1,0 +1,98 @@
+<!doctype html>
+
+<title>CodeMirror: Lambda Calculus mode</title>
+<meta charset="utf-8"/>
+<link rel=stylesheet href="src/docs.css">
+
+<link rel="stylesheet" href="src/codemirror.css">
+<link rel="stylesheet" href="src/3024-night.css">
+<script src="src/codemirror.js"></script>
+<script src="src/matchbrackets.js"></script>
+<script src="../lambdacalc.js"></script>
+<style>.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
+<div id=nav>
+  <a href="https://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png" alt=""></a>
+  <ul>
+    <li><a class=active href="#">Lambda Calculus</a>
+  </ul>
+</div>
+
+<article>
+<h2>Lambda Calculus mode</h2>
+<form><textarea id="code" name="code">
+
+# Some code (with ignored arguments)
+false = \ _a b . b
+true = \ a _b . a
+not = \ b . b false true
+const = true
+
+# Invalid - multiple definition
+true = not false
+
+# Invalid names
+%value = ()
+
+# Invalid args - unbound
+someFunc = \ local . true nonexistant local
+
+# Invalid args - scoped
+otherFunc = \ x . const (\ scopedArg . x ()) scopedArg x
+
+# More code
+zero = false
+succ = \ n f x . f (n f x)
+isZ = \ n . n (const false) true
+add = \ a b f x . a f (b f x)
+mul = \ a b f . a (b f)
+three = succ (succ (succ zero))
+mt = mul three
+nine = mul three three
+
+pair = \ a b c . c a b
+fst = \ c . c true
+snd = \ c . c false
+
+nil = pair false ()
+null = \ l . not (fst l)
+head = \ l . fst (snd l)
+tail = \ l . snd (snd l)
+cons = \ x xs . pair true (pair x xs)
+replicate = \ n v . n (cons v) nil
+repeat = \ v . cons v (repeat v)
+foldr = \ f b as . null as b (f (head as) (foldr f b (tail as)))
+pred = \ n f x . foldr (const f) x (tail (replicate n ())) # Bit janky lol
+map = \ f xs . null xs nil (cons (f (head xs)) (map f (tail xs)))
+sum = foldr add zero
+drop = \ n . n tail
+take = \ n xs . isZ n nil (cons (head xs) (take (pred n) (tail xs)))
+col = \ n xs . head (drop n xs)
+colS = \ n xs . cons (col n xs) (cons (col (succ n) xs) (cons (col (succ (succ n)) xs) (nil)))
+row = \ n xs . map (col n) xs
+rowS = \ n xs . cons (row n xs) (cons (row (succ n) xs) (cons (row (succ (succ n)) xs) (nil)))
+chunk = \ a b xs . rowS a (colS b xs)
+append = \ as bs . null as bs (cons (head as) (append (tail as) bs))
+concat = foldr append nil
+eq = \ a b . isZ a (isZ b) (isZ b false (eq (pred a) (pred b)))
+all = foldr (\ a b . a b false) true
+allf = \ f xs . all (map f xs)
+</textarea></form>
+
+    <script>
+      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+        lineNumbers: true,
+        matchBrackets: true,
+        theme: "3024-night",
+        specialChars: /\\/,
+        specialCharPlaceholder: () => {
+          const elem = document.createElement("span");
+          elem.setAttribute("cm-text", "\\");
+          elem.innerHTML = "λ";
+          return elem;
+        }
+      });
+      editor.setSize(500, 500);
+    </script>
+
+    <p><strong>MIME types defined:</strong> <code>text/lambda-calc</code>.</p>
+  </article>
