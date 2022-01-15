@@ -1,0 +1,30 @@
+{
+  "name": "lc-codewars",
+  "version": "1.0.0",
+  "description": "Lambda Calculus evaluator for Codewars",
+  "main": "src/lambda-calculus.js",
+  "directories": {
+    "example": "example",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kacarott/LC-Codewars.git"
+  },
+  "keywords": [
+    "lc",
+    "lambda-calculus"
+  ],
+  "author": "Kacarott",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Kacarott/LC-Codewars/issues"
+  },
+  "homepage": "https://github.com/Kacarott/LC-Codewars#readme",
+  "dependencies": {
+    "mocha": "^9.1.4"
+  }
+}
