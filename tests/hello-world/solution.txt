@@ -1,0 +1,25 @@
+# Preloaded
+
+true = \ a b . a
+false = \ a b . b
+
+pair = \ a b c . c a b
+nil = \ _ . false
+cons = \ c s . pair true (pair c s)
+
+# Code
+hello = cons 72
+      ( cons 101
+      ( cons 108
+      ( cons 108
+      ( cons 111
+      ( cons 44
+      ( cons 32
+      ( cons 119
+      ( cons 111
+      ( cons 114
+      ( cons 108
+      ( cons 100
+      ( cons 33
+             nil
+      ))))))))))))
