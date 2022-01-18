@@ -16,17 +16,17 @@
 CodeMirror.defineMode("lambdacalc", function(_config, modeConfig) {
 
   // Modes for different types of symbols
-  const DEFNAME = "builtin";
+  const DEFNAME = "variable-2";
   const EQUALS = "text";
   const BRACKETS = "bracket";
-  const LAMBDA = "atom";
+  const LAMBDA = "keyword";
   const DOT = LAMBDA;
-  const PREDEF = "text";
+  const PREDEF = "variable";
   const BOUND = "text";
-  const ARGS = "variable";
-  const HOLE = "variable-2";
+  const ARGS = "def";
+  const HOLE = "atom";
   const NUMBER = "number";
-  const EMPTY = "variable-3";
+  const EMPTY = "text";
   const UNDEF = "error";
   const REDEF = "error";
   const FAIL = "error";

@@ -5,11 +5,11 @@
   src: local('Source Sans Pro'), local('SourceSansPro-Regular'), url(//themes.googleusercontent.com/static/fonts/sourcesanspro/v5/ODelI1aHBYDBqgeIAH2zlBM0YzuT7MdOe03otPbuUS0.woff) format('woff');
 }
 
-body, html { margin: 0; padding: 0; height: 100%; }
+body, html { margin: 0; padding: 0; height: 100%; color: #fff; }
 section, article { display: block; padding: 0; }
 
 body {
-  background: #f8f8f8;
+  background: #303133;
   font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
   line-height: 1.5;
 }
@@ -23,18 +23,18 @@ h2, h3, h1 {
 h1 { font-size: 140%; }
 h2 { font-size: 120%; }
 h3 { font-size: 110%; }
-article > h2:first-child, section:first-child > h2 { margin-top: 0; }
+article > h2:first-child, section:first-child > h2 { margin-top: 0; color: #fff; }
 
 #nav h1 {
   margin-right: 12px;
   margin-top: 0;
   margin-bottom: 2px;
-  color: #d30707;
+  color: #fff;
   letter-spacing: .5px;
 }
 
 a, a:visited, a:link, .quasilink {
-  color: #A21313;
+  color: #fff;
 }
 
 em {
@@ -48,10 +48,8 @@ em {
 article {
   max-width: 700px;
   margin: 0 0 0 160px;
-  border-left: 2px solid #E30808;
-  border-right: 1px solid #ddd;
   padding: 30px 50px 100px 50px;
-  background: white;
+  background: #262729;
   z-index: 2;
   position: relative;
   min-height: 100%;
@@ -114,14 +112,13 @@ article {
 }
 
 #nav ul a {
-  color: black;
+  color: #fff;
   padding: 0 7px 1px 11px;
 }
 
 #nav ul a.active, #nav ul a:hover {
-  border-bottom: 1px solid #E30808;
   margin-bottom: -1px;
-  color: #E30808;
+  color: #fff;
 }
 
 #logo {
@@ -131,7 +128,7 @@ article {
 }
 
 section {
-  border-top: 1px solid #E30808;
+  border-top: 1px solid #fff;
   margin: 1.5em 0;
 }
 
@@ -193,7 +190,7 @@ section.first {
 }
 
 .actionlink.fund {
-  color: #b00;
+  color: #fff;
   left: 50%;
   margin-left: 15px;
 }
@@ -262,11 +259,12 @@ pre {
 
 code {
   padding: 0 2px;
+  color: #fff ;
 }
 
 strong {
-  text-decoration: underline;
   font-weight: normal;
+  color: #fff ;
 }
 
 .field {
