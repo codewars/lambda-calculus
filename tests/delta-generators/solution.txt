@@ -1,0 +1,20 @@
+# Kacarott
+
+true = \ a _ . a
+false = \ _ b . b
+id = \ x . x
+
+pair = \ a b c . c a b
+nil = \ p . p false ()
+cons = \ v xs . pair true (pair v xs)
+
+sub = \ a b . b true (\ _ . false) a (sub (a a id) (b () id))
+
+head = \ xs . xs false true
+tail = \ xs . xs false false
+null = \ xs. xs true false true
+
+ss = \ xs . sub (head (tail xs)) (head xs)
+
+d = \ xs . null xs nil (null (tail xs) nil (cons (ss xs) (d (tail xs))))
+delta = \ n xs . n xs (\ m . delta m (d xs))

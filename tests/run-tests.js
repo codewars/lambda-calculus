@@ -4,18 +4,20 @@ const { chdir } = require("process");
 const { readdirSync } = require("fs");
 
 const examples = [
-  "hello-world"
+  "hello-world",
+  "counter",
+  // "delta-generators", // for some reason breaks tests
+  "is-prime",
 ];
 
 try {
   chdir("tests");
   for (const example of examples) {
-    chdir("./" + example);
-    describe(example, () => {
-      console.log(readdirSync("."));
+    describe(example, function() {
+      chdir("./" + example);
       require("./" + example + "/test.js");
+      chdir("..");
     });
-    chdir("..");
   }
   chdir("..");
 } catch (err) {

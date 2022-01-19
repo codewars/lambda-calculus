@@ -1,0 +1,11 @@
+# Kacarott
+
+true  = \ a b . a
+false = \ a b . b
+
+zero = false
+succ = \ n f x . f (n f x)
+
+y = \ f . (\ x . f (x x)) (\ x . f (x x))
+
+counter = y (\ count n b . b (count (succ n)) (n) ) zero

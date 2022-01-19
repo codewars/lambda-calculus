@@ -1,4 +1,4 @@
-# Preloaded
+# JohanWiltink
 
 true = \ a b . a
 false = \ a b . b
