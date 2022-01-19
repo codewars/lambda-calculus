@@ -14,6 +14,8 @@ JohanWiltink - https://github.com/JohanWiltink
 Kacarott - https://github.com/Kacarott
 */
 
+const fs = require("fs");
+
 // Default options
 const options = {
   "verbosity": "Quiet",    // Quiet | Concise | Loquacious | Verbose
@@ -268,7 +270,7 @@ Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf(
 Object.defineProperty( Function.prototype, "decoded", { get() { return this.valueOf(); }, enumerable: true } );
 
 exports.config = options;
-exports.compile = compile;
+exports.compile = text => compile(text === undefined ? fs.readFileSync("./solution.txt", "utf8") : text);
 exports.T = new L('a', new L('b', new V('a')));
 exports.F = new L('a', new L('b', new V('b')));
 exports.toInt = toInt;
