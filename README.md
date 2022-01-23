@@ -26,7 +26,7 @@ console.log(solution(true)(false)); // true
 
 ### Documentation
 
-##### `compile`
+
 ---
 
 `compile :: String? -> {String: (Term -> Term)}`
@@ -35,7 +35,7 @@ console.log(solution(true)(false)); // true
 
 If called without an argument, will try open a file called `solution.txt` in the same directory, and parse its contents.
 
-##### `config`
+
 ---
 
 `config :: {String: String}`
