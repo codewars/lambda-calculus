@@ -6,7 +6,7 @@ const { readdirSync } = require("fs");
 const examples = [
   "hello-world",
   "counter",
-  // "delta-generators", // for some reason breaks tests
+  "delta-generators", // for some reason breaks tests
   "is-prime",
 ];
 
