@@ -113,14 +113,19 @@ function toInt(term) {
 }
 
 function compile(code) {
+  // Capture current settings
+  const purity = config.purity;
+  const numEncoding = config.numEncoding;
+  const verbosity = config.verbosity;
+
   function compile(env,code) {
     function wrap(name,term) {
       const FV = term.free(); FV.delete("()");
-      if ( config.purity==="Let" )
+      if ( purity === "Let" )
         return Array.from(FV).reduce( (tm,nm) => { if ( nm in env ) return new A( new L(nm,tm), env[nm] ); else { console.error(name,"=",term.toString()); throw new ReferenceError(`undefined free variable ${ nm }`); } } , term );
-      else if ( config.purity==="LetRec" )
+      else if ( purity==="LetRec" )
         return Array.from(FV).reduce( (tm,nm) => { // TODO: Figure out what this does, and tidy it
-            if ( nm===name )
+            if ( nm === name )
               return tm;
             else if ( nm in env )
               return new A( new L(nm,tm), env[nm] );
@@ -131,13 +136,13 @@ function compile(code) {
           }
         , FV.has(name) ? new A(new L("f",new A(new L("x",new A(new V("f"),new A(new V("x"),new V("x")))),new L("x",new A(new V("f"),new A(new V("x"),new V("x")))))),new L(name,term)) : term
         );
-      else if ( config.purity==="PureLC" )
+      else if ( purity==="PureLC" )
         if ( FV.size )
           { console.error(name,"=",term.toString()); throw new EvalError(`unresolvable free variable(s) ${ Array.from(FV) }: all expressions must be closed in PureLC mode`); }
         else
           return term;
       else
-        throw new RangeError(`config.purity: unknown setting "${ config.purity }"`);
+        throw new RangeError(`config.purity: unknown setting "${ purity }"`);
     }
     const letters = /[a-z]/i;
     const digits = /\d/;
