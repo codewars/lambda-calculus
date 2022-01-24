@@ -6,3 +6,4 @@
 1. side effects? keywords for magic things like print to console? maybe just give `stdin` and `stdout` preloaded?
 1. better error messages ( don't we actually already have an index into the current string for that? )
 1. compiler debugging output dependent on log level
+1. tidy line 127 in src/lambda-calculus.js ( the free variables check wrapper )
