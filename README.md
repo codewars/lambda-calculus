@@ -11,7 +11,7 @@ Simply run `node test` from this directory.
 
 ```javascript
 // Import module
-const LC = const LC = require("./src/lambda-calculus.js");
+const LC = require("./src/lambda-calculus.js");
 
 // Set config options
 LC.config.purity = "Let";
@@ -19,9 +19,13 @@ LC.config.numEncoding = "Church";
 
 // Compile
 const solution = compile().TRUE;
+// or
+const {TRUE,FALSE} = compile();
 
 // Use
 console.log(solution(true)(false)); // true
+// or
+console.log(TRUE(true)(false)) // true
 ```
 
 ### Documentation
