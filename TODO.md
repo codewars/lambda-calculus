@@ -10,3 +10,4 @@
     > This is why I wrap terms with the environment at that moment.
 1. constants. currently all variables can not only be shadowed but also overwritten. this might mean introducing full scoping, and might not be worth it.
 1. `boolEncoding` ? LC bools translate perfectly to JS choice functions; this might also not be worth it.
+1. Strings ( would depend on list, char _and_ number encodings; the concept seems too high level for LC )
