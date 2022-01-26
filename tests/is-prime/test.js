@@ -7,6 +7,7 @@ LC.config.purity = "LetRec";
 LC.config.numEncoding = "Church";
 
 const {isPrime} = LC.compile();
+const fromInt = LC.fromIntWith(LC.config);
 
 it("fixed tests", function() {
   this.timeout(12e3);
