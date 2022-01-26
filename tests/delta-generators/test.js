@@ -1,54 +1,39 @@
-const chai = require("chai");
-const assert = chai.assert;
-chai.config.truncateThreshold = 0;
+const {assert} = require("chai");
 
 const LC = require("../../src/lambda-calculus.js");
-// const LC = { compile: text => compile(text || code), config: options } // Temporary. Would normally import, see line above.
 LC.config.purity = "LetRec";
 LC.config.numEncoding = "Scott";
 
-const solution = LC.compile();
+const {delta} = LC.compile();
 
-const fin = LC.compile(String.raw`
+const {fin} = LC.compile(String.raw`
 nil = \ _ _ x . x
 cons = \ v l a . a (\ x _ . x) (\ b . b v l)
-input = cons 1 (cons 2 (cons 4 (cons 7 nil)))`).input;
+fin = cons 1 (cons 2 (cons 4 (cons 7 nil)))`);
 
-const inf = LC.compile(String.raw`
+const {inf} = LC.compile(String.raw`
 succ = \ n _ f . f n
 incr = \ n a . a (\ x _ . x) (\ b . b n (incr (succ n)))
-input = incr 0`).input;
+inf = incr 0`);
 
-const True = LC.T;
-const False = LC.F;
+const fromInt = LC.fromIntWith(LC.config);
+const toInt = LC.toIntWith(LC.config);
 
-const toBool = t => t(true)(false);
-const toInt = n => {
-  const prev = LC.config.numEncoding;
-  LC.config.numEncoding = "Scott";
-  const res = LC.toInt(n);
-  LC.config.numEncoding = prev;
-  return res;
-};
+const Fst = fst => snd => fst ;
+const Snd = fst => snd => snd ;
+const head = xs => xs (Snd) (Fst) ;
+const tail = xs => xs (Snd) (Snd) ;
+const isNil = xs => xs (Fst) (false) (true) ;
 
-function toArr(a, n) {
+function toArr(a, n) { // lists use double pair encoding, not Scott!
   const res = [];
-  while (n--) {
-    if (!toBool(a(True))) break;
-    res.push(toInt(a(False)(True)));
-    a = a(False)(False);
-  }
+  while ( n-->0 && ! isNil (a) )
+    res.push(toInt(head(a))),
+    a = tail(a);
   return res;
 }
 
-const ZERO = z => s => z;
-const SUCC = n => z => s => s(n);
-const ONE = SUCC(ZERO);
-const TWO = SUCC(ONE);
-
-describe("Sample Tests", function() {
-  it("Basics", function() {
-    assert.deepEqual(toArr(solution.delta(TWO)(fin.term,fin.env),2), [1, 1]);
-    assert.deepEqual(toArr(solution.delta(ONE)(inf.term,inf.env),10), Array(10).fill(1));
-  });
+it("fixed tests", function() {
+  assert.deepEqual( toArr( delta (fromInt(2)) (fin), 2 ), [1, 1] );
+  assert.deepEqual( toArr( delta (fromInt(1)) (inf), 10 ), [1,1,1,1,1,1,1,1,1,1] );
 });
