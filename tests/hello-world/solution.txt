@@ -1,11 +1,10 @@
 # JohanWiltink
 
-true = \ a b . a
-false = \ a b . b
-
-pair = \ a b c . c a b
-nil = \ _ . false
-cons = \ c s . pair true (pair c s)
+true = \ t f . t
+false = \ t f . f
+pair = \ x y fn . fn x y
+nil = pair false (pair () ())
+cons = \ x xs . pair true (pair x xs)
 
 # Code
 hello = cons 72
