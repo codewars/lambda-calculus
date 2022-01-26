@@ -2,13 +2,12 @@ const chai = require("chai");
 chai.config.truncateThreshold = 0;
 const {assert} = chai;
 
-// const LC = require("../../src/lambda-calculus.js");
-const LC = { compile: () => compile(code), config } // Temporary. Would normally import, see line above.
+const LC = require("../../src/lambda-calculus.js");
 LC.config.purity = "LetRec";
 LC.config.numEncoding = "Scott";
 
 const {isPrime} = LC.compile();
-// const fromInt = LC.fromIntWith(LC.config);
+const fromInt = LC.fromIntWith(LC.config);
 
 it("fixed tests", function() {
   this.timeout(12e3);
