@@ -1,14 +1,12 @@
 // Run all example tests
 
-const { chdir } = require("process");
-const { readdirSync } = require("fs");
+const {chdir} = process;
 
-const examples = [
-  "hello-world",
-  "counter",
-  "delta-generators", // for some reason breaks tests
-  "is-prime",
-];
+const examples = [ "hello-world"
+                 , "counter"
+                 , "delta-generators"
+                 , "is-prime"
+                 ];
 
 try {
   chdir("tests");
