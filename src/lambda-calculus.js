@@ -17,25 +17,10 @@ Kacarott - https://github.com/Kacarott
 const fs = require("fs");
 
 // Default options
-const config = new class {
-  constructor() {
-    this._verbosity = "Quiet";    // Calm | Concise | Loquacious | Verbose
-    this._purity = "Let";         // Let | LetRec | PureLC
-    this._numEncoding = "Church"; // None | Church | Scott | BinaryScott
-  }
-  set verbosity(val) {
-    this._verbosity = val;
-  }
-  set purity(val) {
-    this._purity = val;
-  }
-  set numEncoding(val) {
-    this._numEncoding = val;
-  }
-  get verbosity() { return this._verbosity; }
-  get purity() { return this._purity; }
-  get numEncoding() { return this._numEncoding; }
-};
+const config = { verbosity: "Calm"      //  Calm | Concise | Loquacious | Verbose
+               , purity: "Let"          //  Let | LetRec | PureLC
+               , numEncoding: "Church"  //  None | Church | Scott | BinaryScott
+               };
 
 function union(left, right) {
   let r = new Set(left);
@@ -76,6 +61,8 @@ class A {
   }
 }
 
+const Y = new L("f",new A(new L("x",new A(new V("f"),new A(new V("x"),new V("x")))),new L("x",new A(new V("f"),new A(new V("x"),new V("x"))))));
+
 function fromInt(n) {
   if ( config.numEncoding === "Church" )
     return new L("s", new L("z", Array(n).fill().reduce( s => new A(new V("s"), s), new V("z")) ));
@@ -90,30 +77,37 @@ function fromInt(n) {
 }
 
 function toInt(term) {
-  try {
-    if ( config.numEncoding === "Church" )
-      return term ( x => x+1 ) ( new V(0), new Map([[0,[0]]]) );
-    else if ( config.numEncoding === "Scott" ) {
-      let c = 0;
-      while (typeof term === 'function') term = term (new V(c), new Map([[c,[c++]]])) (x=>x.term); // Hacky
-      return c-1;
-    } else if ( config.numEncoding === "BinaryScott" ) {
-      let c = { v: '' }; // Yes, it is hacky I know.
-      while ( typeof term === 'function' ) term = term ( c ) ( x => { c.v = c.v+'0'; return x.term; } ) ( x => { c.v = c.v+'1'; return x.term; } );
-      return Number("0b0"+c.v.split('').reverse().join(''));
-    } else if (config.numEncoding === "None") {
-      return term;
-    } else {
-      return config.numEncoding.toInt(term);
+  return toIntWith()(term);
+}
+
+function toIntWith(cfg={}) {
+  const {numEncoding,verbosity} = Object.assign( {}, config, cfg );
+  return function toInt(term) {
+    try {
+      if ( numEncoding === "Church" )
+        return term ( x => x+1 ) ( new V(0), new Map([[0,[0]]]) );
+      else if ( numEncoding === "Scott" ) {
+        let c = 0;
+        while (typeof term === 'function') term = term (new V(c), new Map([[c,[c++]]])) (x=>x.term); // Hacky
+        return c-1;
+      } else if ( numEncoding === "BinaryScott" ) {
+        let c = { v: '' }; // Yes, it is hacky I know.
+        while ( typeof term === 'function' ) term = term ( c ) ( x => { c.v = c.v+'0'; return x.term; } ) ( x => { c.v = c.v+'1'; return x.term; } );
+        return Number("0b0"+c.v.split('').reverse().join(''));
+      } else if (numEncoding === "None") {
+        return term;
+      } else {
+        return numEncoding.toInt(term);
+      }
+    } catch (e) {
+      console.error("Term is not a number (or encoding is wrong)");
+      throw EvalError("Term is not a number (or encoding is wrong)");
     }
-  } catch (e) {
-    console.error("Term is not a number (or encoding is wrong)");
-    throw EvalError("Term is not a number (or encoding is wrong)");
-  }
+  } ;
 }
 
 function compile(code) {
-  // Capture current settings
+  // Capture current settings // rewrite for compileWith()
   const purity = config.purity;
   const numEncoding = config.numEncoding;
   const verbosity = config.verbosity;
@@ -124,22 +118,23 @@ function compile(code) {
       if ( purity === "Let" )
         return Array.from(FV).reduce( (tm,nm) => { if ( nm in env ) return new A( new L(nm,tm), env[nm] ); else { console.error(name,"=",term.toString()); throw new ReferenceError(`undefined free variable ${ nm }`); } } , term );
       else if ( purity==="LetRec" )
-        return Array.from(FV).reduce( (tm,nm) => { // TODO: Figure out what this does, and tidy it
+        return Array.from(FV).reduce( (tm,nm) => { // this wraps terms in a snapshot of their environment at the moment of defining // TODO: tidy it
             if ( nm === name )
               return tm;
             else if ( nm in env )
               return new A( new L(nm,tm), env[nm] );
             else {
-              console.error(name,"=",term.toString());
+              if ( config.verbosity > "Calm" ) console.error(`undefined free variable ${ nm } while defining ${ name } = ${ term }`);
               throw new ReferenceError(`undefined free variable ${ nm }`);
             }
           }
-        , FV.has(name) ? new A(new L("f",new A(new L("x",new A(new V("f"),new A(new V("x"),new V("x")))),new L("x",new A(new V("f"),new A(new V("x"),new V("x")))))),new L(name,term)) : term
+        , FV.has(name) ? new A(Y,new L(name,term)) : term
         );
       else if ( purity==="PureLC" )
-        if ( FV.size )
-          { console.error(name,"=",term.toString()); throw new EvalError(`unresolvable free variable(s) ${ Array.from(FV) }: all expressions must be closed in PureLC mode`); }
-        else
+        if ( FV.size ) {
+          if ( config.verbosity > "Calm" ) console.error(`unresolvable free variable(s) ${ Array.from(FV) } while defining ${ name } = ${ term }`);
+          throw new EvalError(`unresolvable free variable(s) ${ Array.from(FV) }: all expressions must be closed in PureLC mode`);
+        } else
           return term;
       else
         throw new RangeError(`config.purity: unknown setting "${ purity }"`);
@@ -163,8 +158,7 @@ function compile(code) {
       } else if ( letters.test( code[i] || "" ) ) {
         let j = i+1;
         while ( identifierChars.test( code[j] || "" ) ) j++;
-        const k = sp(j);
-        return [k,code.slice(i,j)];
+        return [sp(j),code.slice(i,j)];
       } else
         return null;
     }
@@ -172,8 +166,7 @@ function compile(code) {
       if ( digits.test(code[i]) ) {
         let j = i+1;
         while ( digits.test(code[j]) ) j++;
-        const k = sp(j);
-        return [k,fromInt(Number(code.slice(i,j)))];
+        return [sp(j),fromInt(Number(code.slice(i,j)))];
       } else
         return null;
     }
@@ -263,7 +256,7 @@ function compile(code) {
         return result;
       }
     }
-  }
+  };
   return new Proxy(env, envHandler);
 }
 
@@ -278,7 +271,7 @@ function evalLC(term) {
       const termVal = [typeof arg !== 'number'?arg:fromInt(arg), new Map(env)];
       const newEnv = new Map(boundVars).set(term.name, termVal);
       return runEval(term.body, stack, newEnv);
-    }
+    } ;
 
     // object 'methods/attributes'
     result.term = term;
