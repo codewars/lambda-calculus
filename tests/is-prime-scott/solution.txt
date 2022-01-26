@@ -1,0 +1,29 @@
+# JohanWiltink
+
+B = \ f g x . f (g x)
+I = \ x . x
+K = \ x _ . x
+Y = \ f . ( \ x . f (x x) ) ( \ x . f (x x) )
+True = \ t f . t
+False = \ t f . f
+Succ = \ n z s . s n
+Pred = \ n . n 0 I
+Plus = \ m n . m n (B Succ (Plus n))
+Minus = \ m n . m 0 (B (n m) Minus)
+Times = \ m n . m 0 (B (Plus n) (Times n))
+isZero = \ n . n True (K False)
+isNotZero = \ n . n False (K True)
+And = \ x y . x y x
+Or = \ x . x x
+GT = \ x y . isNotZero (Minus x y)
+Mod = \ n m . ( \ r . isZero (Minus m r) 0 r ) (( \ n m . ( \ d . isZero d n (Mod d m) ) (Minus n m) ) n m)
+
+# function isPrime(n) {
+#   const trial = function trial(i) {
+#     return i * i > n || n % i != 0 && trial(i+1) ;
+#   } ;
+#   return n > 1 && trial(2) ;
+# }
+
+isPrime = \ n . ( \ trial . And (GT n 1) (trial 2) )
+                ( Y \ trial i . Or (GT (Times i i) n) (And (isNotZero (Mod n i)) (trial (Succ i))) )

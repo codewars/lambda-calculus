@@ -6,6 +6,7 @@ const examples = [ "hello-world"
                  , "counter"
                  , "delta-generators"
                  , "is-prime"
+                 , "is-prime-scott"
                  ];
 
 try {
