@@ -1,23 +1,25 @@
-const {config, compile, T, F, toInt} = require("../../src/lambda-calculus.js");
-const assert = require("assert");
 const chai = require("chai");
-
+const {assert} = chai;
 chai.config.truncateThreshold = 0;
 
-// const LC = { compile: () => compile(code), config: options } // Temporary. Would normally import, see line above.
-config.purity = "Let";
-config.numEncoding = "Church";
+const LC = require("../../src/lambda-calculus.js");
+LC.config.purity = "Let";
+LC.config.numEncoding = "Church";
 
-const solution = compile().hello;
+const {hello} = LC.compile();
 
-function _toString(term, res="") {
-  if (term(T)(true)(false)) {
-    const n = toInt(term(F)(T));
-    return _toString(term(F)(F), res+String.fromCharCode(n));
-  } else return res;
-}
-describe("Full tests", function() {
-  it("Does it work?", function() {
-    assert.equal(_toString(solution), "Hello, world!")
-  });
+const toInt = LC.toIntWith(LC.config);
+
+const Fst = fst => snd => fst ;
+const Snd = fst => snd => snd ;
+
+const isNil = xs => xs (Fst) (false) (true) ;
+const head = xs => xs (Snd) (Fst) ;
+const tail = xs => xs (Snd) (Snd) ;
+
+// double pair encoding for list
+const toString = xs => isNil (xs) ? "" : String.fromCharCode(toInt(head(xs))) + toString(tail(xs)) ;
+
+it("fixed test", function() {
+  assert.equal( toString(hello), "Hello, world!" );
 });

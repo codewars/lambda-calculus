@@ -5,7 +5,7 @@ Written by [Kacarott](https://github.com/Kacarott) and [JohanWiltink](https://gi
 
 ### Running example tests
 
-Simply run `node test` from this directory.
+Simply run `npm test` from this directory.
 
 ### Usage
 
