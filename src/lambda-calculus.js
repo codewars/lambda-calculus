@@ -30,8 +30,8 @@ function union(left, right) {
 
 class V {
   constructor(name) { this.name = name; }
-  free() { return new Set([ this.name ]); }
-  toString() { return this.name.toString(); }
+  free()            { return new Set([ this.name ]); }
+  toString()        { return this.name.toString(); }
 }
 
 class L {
@@ -39,12 +39,15 @@ class L {
     this.name = name;
     this.body = body;
   }
-  free() { let r = this.body.free(); r.delete(this.name); return r; }
+  free() {
+    let r = this.body.free();
+    r.delete(this.name);
+    return r;
+  }
   toString() {
-    if (this.body instanceof L)
-      return "\\ " + this.name + this.body.toString().slice(1);
-    else
-      return "\\ " + this.name + " . " + this.body.toString();
+    return this.body instanceof L
+      ? `\\ ${this.name}${this.body.toString().slice(1)}`
+      : `\\ ${this.name} . ${this.body.toString()}`;
   }
 }
 
@@ -57,7 +60,7 @@ class A {
   toString() {
     const left = this.left instanceof L ? `(${this.left})` : this.left ;
     const right = this.right instanceof V ? this.right : `(${this.right})` ;
-    return left + ' ' + right;
+    return `${left} ${right}`;
   }
 }
 
@@ -109,12 +112,13 @@ function toIntWith(cfg={}) {
   } ;
 }
 
-function compile(code) { return compileWith()(code); }
+// parse :: String -> {String: Term}
+function parse(code) { return parseWith()(code); }
 
-function compileWith(cfg={}) {
+function parseWith(cfg={}) {
   const {numEncoding,purity,verbosity} = Object.assign( {}, config, cfg );
-  return function compile(code=fs.readFileSync("./solution.txt", "utf8")) {
-    function compile(env,code) {
+  return function parse(code) {
+    function parseTerm(env,code) {
       function wrap(name,term) {
         const FV = term.free(); FV.delete("()");
         if ( purity === "Let" )
@@ -239,14 +243,28 @@ function compileWith(cfg={}) {
       } else
         error(i,"defn: incomplete parse");
     }
-    const env = code.replace( /#.*$/gm, "" )
-                    .replace( /\n(?=\s)/g, "" )
-                    .split( '\n' )
-                    .filter( term => /\S/.test(term) )
-                    .reduce(compile,{})
-                    ;
+    return code.replace( /#.*$/gm, "" ) // Ignore comments
+                .replace( /\n(?=\s)/g, "" )
+                .split( '\n' )
+                .filter( term => /\S/.test(term) )
+                .reduce(parseTerm,{});
+  }
+}
+
+function compile(code) { return compileWith()(code); }
+
+function compileWith(cfg={}) {
+  const {numEncoding,purity,verbosity} = Object.assign( {}, config, cfg );
+  return function compile(code=fs.readFileSync("./solution.txt", "utf8")) {
+    const env = parseWith({numEncoding,purity,verbosity})(code);
     for ( const [name,term] of Object.entries(env) )
-      Object.defineProperty( env, name, { get() { return env._cache.has(name) ? env._cache.get(name) : env._cache.set( name, evalLC(term) ).get(name) ; } } );
+      Object.defineProperty( env, name, {
+        get() {
+          return env._cache.has(name)
+            ? env._cache.get( name )
+            : env._cache.set( name, evalLC(term) ).get(name);
+          }
+        });
     env._cache = new Map;
     const envHandler = {
       get: function (target, property) {
@@ -314,7 +332,7 @@ function evalLC(term) {
     }
     return awaitArg(term, stack, boundVars);
   }
-  return runEval(term, [], new Map());
+  return runEval(term, [], new Map);
 }
 
 Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { return toInt(this); } } );
