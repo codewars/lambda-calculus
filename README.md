@@ -5,7 +5,14 @@ Written by [Kacarott](https://github.com/Kacarott) and [JohanWiltink](https://gi
 
 ### Running example tests
 
-Simply run `npm test` from this directory.
+**Requirements:**
+- `node`
+- `npm`
+
+From within this directory:
+
+1. Install dependancies with `npm install`
+2. Run tests with `npm test`
 
 ### Usage
 
