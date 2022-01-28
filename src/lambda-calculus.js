@@ -117,6 +117,7 @@ function parse(code) { return parseWith()(code); }
 
 function parseWith(cfg={}) {
   const {numEncoding,purity,verbosity} = Object.assign( {}, config, cfg );
+  const fromInt = fromIntWith({numEncoding,purity,verbosity});
   return function parse(code) {
     function parseTerm(env,code) {
       function wrap(name,term) {
