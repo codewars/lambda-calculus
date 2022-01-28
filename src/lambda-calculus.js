@@ -298,7 +298,6 @@ function evalLC(term) {
     // object 'methods/attributes'
     result.term = term;
     result.env = boundVars;
-    result.toBool = () => result(true)(false);
     return result;
   }
 
@@ -346,5 +345,3 @@ exports.fromInt = fromInt;
 exports.fromIntWith = fromIntWith;
 exports.toInt = toInt;
 exports.toIntWith = toIntWith;
-exports.T = new L('a', new L('b', new V('a'))); // to be removed
-exports.F = new L('a', new L('b', new V('b'))); // to be removed
