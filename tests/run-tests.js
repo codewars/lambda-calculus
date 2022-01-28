@@ -2,7 +2,8 @@
 
 const {chdir} = process;
 
-const examples = [ "hello-world"
+const examples = [
+                   "hello-world"
                  , "counter"
                  , "delta-generators"
                  , "is-prime"
