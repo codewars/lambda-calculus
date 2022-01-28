@@ -8,6 +8,7 @@ const examples = [
                  , "delta-generators"
                  , "is-prime"
                  , "is-prime-scott"
+                 , "prime-sieve"
                  ];
 
 try {
