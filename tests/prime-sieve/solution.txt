@@ -68,7 +68,6 @@ iterate = \ fn x . cons x (iterate fn (fn x))
 
 # LE :: Stream Int -> Stream Int -> Bool
 LE = \ m n . isZero (minus (head m) (head n)) # no need to order on subsequent elements
-                                              # is that so?
 
 # data Set a = Nil | Branch a (Set a) (Set a)
 
@@ -79,13 +78,14 @@ empty = \ nil branch . nil
 branch = \ x left right . \ nil branch . branch x left right
 
 # insert :: (Ord a) => a -> Set a -> Set a
-insert = \ x set . set
-            (branch x empty empty)
-            ( \ y left right .
-                  LE x y
-                    (branch y left (insert x right))
-                    (branch y (insert x left) right)
-            )
+insert = \ x set .
+             set
+               (branch x empty empty)
+               ( \ y left right .
+                     LE x y
+                       (branch y left (insert x right))
+                       (branch y (insert x left) right)
+               )
 
 # findMin :: (Partial) => Set a -> a
 findMin = \ set . set ()
@@ -97,13 +97,12 @@ minView = \ set . set ()
           \ x left right .
               left
                 (pair x right)
-                ( \ _ _ _ .
-                    ( \ unpair . unpair \ y left' . pair y (branch x left' right) ) (minView left)
-                )
+                ( \ _ _ _ . ( \ unpair . unpair \ y left' . pair y (branch x left' right) ) (minView left) )
 
 # insertPrime :: Stream Int -> Set (Stream Int) -> Set (Stream Int)
-# insertPrime = \ candidates . insert (map (mult (head candidates)) candidates)
-insertPrime = \ candidates . candidates \ prime _ . insert (map (mult prime) candidates)
+insertPrime = \ candidates . candidates
+              \ prime _ .
+                  insert (map (mult prime) candidates)
 
 # adjust :: Int -> Set (Stream Int) -> Set (Stream Int)
 adjust = \ x table .

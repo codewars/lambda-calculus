@@ -2,16 +2,13 @@ const chai = require("chai");
 chai.config.truncateThreshold = 0;
 const {assert} = chai;
 
-// const LC = require("../../src/lambda-calculus.js");
-const LC = { compile: () => compile(code), config } // Temporary. Would normally import, see line above.
+const LC = require("../../src/lambda-calculus.js");
 LC.config.purity = "LetRec";
 LC.config.numEncoding = "Scott";
 LC.config.verbosity = "Concise";
 
 const {primes} = LC.compile();
-// const fromInt = LC.fromIntWith(LC.config);
-// const toInt = LC.toIntWith(LC.config);
-// const {fromInt,toInt} = LC;
+const toInt = LC.toIntWith(LC.config);
 const head = xs => xs ( x => xs => x ) ;
 const tail = xs => xs ( x => xs => xs ) ;
 const take = n => xs => n ? [ head(xs), ...take(n-1)(tail(xs)) ] : [] ;
