@@ -316,7 +316,9 @@ function evalLC(term) {
       } else if (term instanceof L) {
         let [lastTerm, lastEnv, isRight] = stack.pop();
         if (isRight) {
-          boundVars = new Map(boundVars).set(term.name, [lastTerm, lastEnv]);
+          if (term.name !== "_") {
+            boundVars = new Map(boundVars).set(term.name, [lastTerm, lastEnv]);
+          }
           term = term.body;
         } else { // Pass the function some other function. This might need redoing
           term = lastTerm(awaitArg(term, stack, boundVars));
