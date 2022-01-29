@@ -225,7 +225,9 @@ function parseWith(cfg={}) {
             return [l,r];
           } else {
             const k = expect(')')(j) || error(j,"paren_d: expected ')'") ;
-            return [k,new V("()")];
+            const undefinedTerm = new V("()");
+            undefinedTerm.defName = name(0)[1];
+            return [k, undefinedTerm];
           }
         } else
           return null;
@@ -305,7 +307,7 @@ function evalLC(term) {
     while (!(term instanceof L) || stack.length > 0) {
       if (term instanceof V)
         if ( term.name==="()" )
-          { console.error("eval: evaluating undefined"); throw new EvalError; }
+          { console.error(`eval: evaluating undefined inside definition of "${term.defName}"`); throw new EvalError; }
         else
           [term, boundVars] = boundVars.get(term.name);
       else if (term instanceof A) {
