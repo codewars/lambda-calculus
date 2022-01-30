@@ -93,13 +93,15 @@ function toIntWith(cfg={}) {
       if ( numEncoding === "Church" )
         return term ( x => x+1 ) ( new V(0), new Map([[0,[0]]]) );
       else if ( numEncoding === "Scott" ) {
-        let c = 0;
-        while (typeof term === 'function') term = term (new V(c), new Map([[c,[c++]]])) (x=>x.term); // Hacky
-        return c-1;
+        let result = 0, evaluating = true;
+        while ( evaluating )
+          term ( () => evaluating = false ) ( n => () => { term = n; result++ } ) ();
+        return result;
       } else if ( numEncoding === "BinaryScott" ) {
-        let c = { v: '' }; // Yes, it is hacky I know.
-        while ( typeof term === 'function' ) term = term ( c ) ( x => { c.v = c.v+'0'; return x.term; } ) ( x => { c.v = c.v+'1'; return x.term; } );
-        return Number("0b0"+c.v.split('').reverse().join(''));
+        let result = 0, bit = 1, evaluating = true;
+        while ( evaluating )
+          term ( () => evaluating = false ) ( n => () => { term = n; bit *= 2 } ) ( n => () => { term = n; result += bit; bit *= 2 } ) ();
+        return result;
       } else if (numEncoding === "None") {
         return term;
       } else {
