@@ -2,13 +2,13 @@
 
 const {chdir} = process;
 
-const examples = [
-                   "hello-world"
-                 , "counter"
-                 , "delta-generators"
-                 , "is-prime"
-                 , "is-prime-scott"
-                 , "prime-sieve"
+const examples = [ "basics-binary-scott"
+              // , "hello-world"
+              // , "counter"
+              // , "delta-generators"
+              // , "is-prime"
+              // , "is-prime-scott"
+              // , "prime-sieve"
                  ];
 
 try {

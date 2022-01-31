@@ -1,0 +1,29 @@
+# JohanWiltink
+
+B = \ f g x . f (g x)
+I = \ x . x
+K = \ x _ . x
+Y = \ f . ( \ x . f (x x) ) ( \ x . f (x x) )
+
+# data Boolean = False | True
+false = \ f t . f
+true = \ f t . t
+
+# data Int = End | Even Int | Odd Int
+succ = \ n . ()
+pred = \ n . ()
+plus = \ m n . ()
+minus = \ m n . ()
+times = \ m n . ()
+
+isZero = \ n . n true (K false) (K false)
+isNotZero = \ n . n false (K true) (K true)
+
+zero = 0
+# one = 1
+# two = 2
+# three = 3
+# four = 4
+
+# data Ordering = LT | EQ | GT
+compare = \ m n . ()
