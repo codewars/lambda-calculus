@@ -1,29 +1,158 @@
-# JohanWiltink
+# BinaryScott Number
 
-B = \ f g x . f (g x)
-I = \ x . x
-K = \ x _ . x
-Y = \ f . ( \ x . f (x x) ) ( \ x . f (x x) )
+#import Combinators.lc
 
-# data Boolean = False | True
-false = \ f t . f
-true = \ f t . t
+B  = \ f g x . f (g x)
+C  = \ f x y . f y x
+I  = \ x . x
+K  = \ x _ . x
+KI = \ _ x . x
+M  = \ x . x x
+S  = \ f g x . f x (g x)
+T  = \ x f . f x
+V  = \ x y f . f x y
+W  = \ f x . f x x
+Y  = \ f . ( \ x . f (x x) ) ( \ x . f (x x) )
+Z  = \ f . ( \ x . f \ y . x x y ) ( \ x . f \ y . x x y )
 
-# data Int = End | Even Int | Odd Int
-succ = \ n . ()
-pred = \ n . ()
-plus = \ m n . ()
-minus = \ m n . ()
-times = \ m n . ()
+#import Boolean.lc
 
-isZero = \ n . n true (K false) (K false)
-isNotZero = \ n . n false (K true) (K true)
+False = \ f t . f
+True  = \ f t . t
 
-zero = 0
-# one = 1
-# two = 2
-# three = 3
-# four = 4
+not = \ p . p True False
 
-# data Ordering = LT | EQ | GT
-compare = \ m n . ()
+and     = \ p   . p p
+or      = \ p q . p q p
+xor     = \ p q . p q (not q)
+implies = \ p   . p (True)
+
+#import Ordering.lc
+
+LT = \ lt eq gt . lt
+EQ = \ lt eq gt . eq
+GT = \ lt eq gt . gt
+
+#import Pair.lc
+
+Pair = \ x y fn . fn x y
+
+fst = \ xy . xy \ x _ . x
+snd = \ xy . xy \ _ y . y
+
+first  = \ fn xy  . xy \ x   . Pair (fn x)
+second = \ fn xy  . xy \ x y . Pair x (fn y)
+both   = \ fn xy  . xy \ x y . Pair (fn x) (fn y)
+bimap  = \ f g xy . xy \ x y . Pair (f x) (g y)
+curry  = \ fn xy  . xy fn
+
+# data Number = End | Even Number | Odd Number
+
+zero = \ end even odd . end
+
+shiftR0 = \ n . \ end even odd . even n # mind that a shiftR in LE is a multiplication
+shiftR1 = \ n . \ end even odd . odd  n # mind that a shiftR in LE is a multiplication
+shiftL  = \ n . n n I I                 # mind that a shiftL in LE is a division
+
+isStrictZero = \ n . n True (K False) (K False) # disallow padding zeroes # O(1)
+isZero       = \ n . n True    isZero (K False) #    allow padding zeroes # amortised O(2), so don't worry too much
+
+pad = \ n . n (shiftR0 zero) (B shiftR0 pad) (B shiftR1 pad)
+unpad = \ n . n zero ( \ z . ( \ unpadZ . isStrictZero unpadZ (shiftR0 unpadZ) zero ) (unpad z) ) (B shiftR1 unpad)
+isPadded = \ n . n False ( \ z . z True (K (isPadded z)) (K (isPadded z)) ) isPadded
+
+# instance Ord
+
+# will break horribly on padded numbers
+compare = \ m n . m (n EQ (K LT) (K LT))
+                    ( \ zm . n GT (compare zm) ( \ zn . compare zm zn LT LT GT ) )
+                    ( \ zm . n GT ( \ zn . compare zm zn LT GT GT ) (compare zm) )
+lt = \ m n . compare m n True  False False
+le = \ m n . compare m n True  True  False
+eq = \ m n . compare m n False True  False
+ge = \ m n . compare m n False True  True
+gt = \ m n . compare m n False False True
+
+# instance Enum
+
+succ = \ n . n (shiftR1 zero) shiftR1 (B shiftR0 succ)
+
+go = \ prefix n . n zero
+                    (go (B prefix shiftR1))
+                    ( \ z . z (prefix z) (K (prefix (shiftR0 z))) (K (prefix (shiftR0 z))) )
+pred = go I
+
+# instance Bits
+
+bitAnd = \ m n . m m
+                   ( \ zm . n n (B shiftR0 (bitAnd zm)) (B shiftR0 (bitAnd zm)) )
+                   ( \ zm . n n (B shiftR0 (bitAnd zm)) (B shiftR1 (bitAnd zm)) )
+
+bitOr = \ m n . m n
+                  ( \ zm . n (shiftR0 zm) (B shiftR0 (bitOr zm)) (B shiftR1 (bitOr zm)) )
+                  ( \ zm . n (shiftR1 zm) (B shiftR1 (bitOr zm)) (B shiftR1 (bitOr zm)) )
+    
+bitXor = \ m n . m n
+    ( \ zm . n (shiftR0 zm) (B shiftR0 (bitXor zm)) (B shiftR1 (bitXor zm)) )
+    ( \ zm . n (shiftR1 zm) (B shiftR1 (bitXor zm)) (B shiftR0 (bitXor zm)) )
+
+testBit = \ i n . isZero i
+                    (n False (testBit (pred i)) (testBit (pred i)))
+                    (n False (K False)          (K True))
+
+bit = \ i . isZero i (shiftR0 (bit (pred i))) (succ i)
+
+popCount = \ n . n n popCount (B succ popCount)
+
+even = \ n . n True  (K True)  (K False)
+odd  = \ n . n False (K False) (K True)
+
+# instance Num
+
+plus = \ m n . m n
+                 ( \ zm . n (shiftR0 zm) (B shiftR0 (plus zm)) (B shiftR1 (plus zm)) )
+                 ( \ zm . n (shiftR1 zm) (B shiftR1 (plus zm)) (B shiftR0 (B succ (plus zm))) )
+
+times = \ m n . m m
+                ( \ zm . n n
+                           ( \ zn . shiftR0 (shiftR0 (times zm zn)) )
+                           ( \ zn . shiftR0 (times zm (shiftR1 zn)) )
+                )
+                ( \ zm . n n
+                           ( \ zn . shiftR0 (times (shiftR1 zm) zn) )
+                           ( \ zn . plus (shiftR1 zn) (shiftR0 (times zm (shiftR1 zn))) )
+                )
+
+unsafeMinus = \ m n . m zero
+                        ( \ zm . n (shiftR0 zm) (B shiftR0 (unsafeMinus zm)) (B shiftR1 (B pred (unsafeMinus zm))) )
+                        ( \ zm . n (shiftR1 zm) (B shiftR1 (unsafeMinus zm)) (B shiftR0 (unsafeMinus zm)) )
+# needs explicit unpad or will litter padding
+minus = \ m n . gt m n zero (unpad (unsafeMinus m n))
+
+until = \ p fn x . p x (until p fn (fn x)) x
+divMod = \ m n . until (B (lt m) snd) (bimap succ shiftR0) (Pair zero n)
+                 \ steps nn . isZero steps
+                                (divMod (minus m (shiftL nn)) n (B Pair (plus (bit (pred steps)))))
+                                (Pair zero m)
+div = \ m n . fst (divMod m n)
+mod = \ m n . snd (divMod m n)
+
+square = W times
+pow = \ m n . n (shiftR1 zero)
+                (B square (pow m))
+                (B (times m) (B square (pow m)))
+
+gcd = \ m n . m n
+                ( \ zm . n m (B shiftR0 (gcd zm)) (K (gcd zm n)) )
+                ( \  _ . n m
+                           (gcd m)
+                           ( \ _ . compare m n
+                                     (gcd (minus n m) m)
+                                     m
+                                     (gcd (minus m n) n)
+                           )
+                )
+lcm = \ m n . ( \ g . isZero g (times (div m g) n) g ) (gcd m n)
+
+min = \ m n . le m n n m
+max = \ m n . le m n m n
