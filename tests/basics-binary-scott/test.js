@@ -71,7 +71,7 @@ describe("Binary Scott tests",function(){
   it("ordering",()=>{
     for ( let i=1; i<=100; i++ ) {
       const m = rnd(i*i), n = rnd(i*i); console.log(`compare ${ m } ${ n }`)
-      assert.strictEqual( compare (fromInt(m)) (fromInt(n)) (-1) (0) (1), Number(m>n) - Number(m<n) );
+      assert.strictEqual( compare (fromInt(m)) (fromInt(n)) ("-1") ("0") ("1"), String(Number(m>n) - Number(m<n)) );
     }
   });
   it("comparison",()=>{
