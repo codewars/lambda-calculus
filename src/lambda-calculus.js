@@ -73,11 +73,12 @@ function fromIntWith(cfg={}) {
   return function fromInt(n) {
     if ( numEncoding === "Church" )
       return new L("s", new L("z", Array(n).fill().reduce( s => new A(new V("s"), s), new V("z")) ));
-    else if ( numEncoding === "Scott" )
+    else if ( numEncoding === "Scott" ) // data Int = Zero | Succ Int
       return new Array(n).fill().reduce( v => new L('_', new L('f', new A(new V('f'), v))), new L('z', new L('_', new V('z'))) );
-    else if ( numEncoding === "BinaryScott" )
-      return n.toString(2).replace(/^0$/,'').split("").reduce( (a,c) => new L('_', new L('f', new L('t', new A(new V( c==='1' ? 't' : 'f' ), a)))), new L('z', new L('_', new L('_', new V('z')))) );
-    else if ( numEncoding === "None" )
+    else if ( numEncoding === "BinaryScott" ) { // data Int = End | Even Int | Odd Int // LittleEndian, padding ( trailing ) 0 bits are possible in practice
+      const zero = new L('z', new L('_', new L('_', new V('z'))));
+      return n ? n.toString(2).split("").reduce( (z,bit) => new L('_', new L('f', new L('t', new A(new V( bit==='0' ? 'f' : 't' ), z)))), zero ) : zero ;
+    } else if ( numEncoding === "None" )
       throw EvalError("This kata does not allow for number constants");
     else
       return numEncoding.fromInt(n); // Custom encoding
@@ -93,21 +94,23 @@ function toIntWith(cfg={}) {
       if ( numEncoding === "Church" )
         return term ( x => x+1 ) ( new V(0), new Map([[0,[0]]]) );
       else if ( numEncoding === "Scott" ) {
-        let c = 0;
-        while (typeof term === 'function') term = term (new V(c), new Map([[c,[c++]]])) (x=>x.term); // Hacky
-        return c-1;
+        let result = 0, evaluating = true;
+        while ( evaluating )
+          term ( () => evaluating = false ) ( n => () => { term = n; result++ } ) ();
+        return result;
       } else if ( numEncoding === "BinaryScott" ) {
-        let c = { v: '' }; // Yes, it is hacky I know.
-        while ( typeof term === 'function' ) term = term ( c ) ( x => { c.v = c.v+'0'; return x.term; } ) ( x => { c.v = c.v+'1'; return x.term; } );
-        return Number("0b0"+c.v.split('').reverse().join(''));
+        let result = 0, bit = 1, evaluating = true;
+        while ( evaluating )
+          term ( () => evaluating = false ) ( n => () => { term = n; bit *= 2 } ) ( n => () => { term = n; result += bit; bit *= 2 } ) ();
+        return result;
       } else if (numEncoding === "None") {
         return term;
       } else {
         return numEncoding.toInt(term);
       }
     } catch (e) {
-      if ( verbosity >= "Concise" ) console.error("toInt: Term is not a number (or encoding is wrong)");
-      throw EvalError("Term is not a number (or encoding is wrong)");
+      if ( verbosity >= "Concise" ) console.error(`toInt: Term is not a number ( or encoding is wrong ) evaluating ${ term }`);
+      throw e;
     }
   } ;
 }
@@ -123,7 +126,14 @@ function parseWith(cfg={}) {
       function wrap(name,term) {
         const FV = term.free(); FV.delete("()");
         if ( purity === "Let" )
-          return Array.from(FV).reduce( (tm,nm) => { if ( nm in env ) return new A( new L(nm,tm), env[nm] ); else { console.error(name,"=",term.toString()); throw new ReferenceError(`undefined free variable ${ nm }`); } } , term );
+          return Array.from(FV).reduce( (tm,nm) => {
+            if ( nm in env )
+              return new A( new L(nm,tm), env[nm] );
+            else {
+              if ( verbosity >= "Concise" ) console.error(`undefined free variable ${ nm } while defining ${ name } = ${ term }`);
+              throw new ReferenceError(`undefined free variable ${ nm }`);
+            }
+          } , term );
         else if ( purity==="LetRec" )
           return Array.from(FV).reduce( (tm,nm) => { // this wraps terms in a snapshot of their environment at the moment of defining // TODO: tidy it
               if ( nm === name )
@@ -131,7 +141,7 @@ function parseWith(cfg={}) {
               else if ( nm in env )
                 return new A( new L(nm,tm), env[nm] );
               else {
-                if ( config.verbosity >= "Concise" ) console.error(`undefined free variable ${ nm } while defining ${ name } = ${ term }`);
+                if ( verbosity >= "Concise" ) console.error(`undefined free variable ${ nm } while defining ${ name } = ${ term }`);
                 throw new ReferenceError(`undefined free variable ${ nm }`);
               }
             }
@@ -139,7 +149,7 @@ function parseWith(cfg={}) {
           );
         else if ( purity==="PureLC" )
           if ( FV.size ) {
-            if ( config.verbosity >= "Concise" ) console.error(`unresolvable free variable(s) ${ Array.from(FV) } while defining ${ name } = ${ term }`);
+            if ( verbosity >= "Concise" ) console.error(`unresolvable free variable(s) ${ Array.from(FV) } while defining ${ name } = ${ term }`);
             throw new EvalError(`unresolvable free variable(s) ${ Array.from(FV) }: all expressions must be closed in PureLC mode`);
           } else
             return term;
