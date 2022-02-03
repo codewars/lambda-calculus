@@ -350,7 +350,6 @@ function evalLC(term) {
 }
 
 Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { return toInt(this); } } );
-Object.defineProperty( Function.prototype, "decoded", { get() { return this.valueOf(); }, enumerable: true } );
 
 exports.config = config;
 exports.compile = compile;
