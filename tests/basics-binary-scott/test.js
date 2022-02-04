@@ -48,35 +48,43 @@ describe("Binary Scott tests",function(){
   it("successor",()=>{
     let n = zero;
     for ( let i=1; i<=100; i++ ) {
-      n = succ (n); console.log(`${ i } <- ${ toString(n) }`)
+      n = succ (n);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`${ i } <- ${ toString(n) }`);
       assert.strictEqual( toInt(n), i );
     }
   });
   it("predecessor",()=>{
     let n = fromInt(100);
     for ( let i=100; i--; ) {
-      n = pred (n); console.log(`${ i } <- ${ toString(n) }`)
+      n = pred (n);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`${ i } <- ${ toString(n) }`);
       assert.strictEqual( toInt(n), i );
     }
   });
   it("predecessor robustness",()=>{
-    assert.strictEqual( toString( pred ( fromInt(2) ) ), "1$" ); console.log(`pred 01$ -> 1$`)
-    assert.strictEqual( toString( pred ( end => even => odd => end ) ), "$" ); console.log(`pred $ -> $`)
+    if ( LC.config.verbosity >= "Loquacious" ) console.log(`pred 01$ -> 1$`);
+    assert.strictEqual( toString( pred ( fromInt(2) ) ), "1$" );
+    if ( LC.config.verbosity >= "Loquacious" ) console.log(`pred $ -> $`);
+    assert.strictEqual( toString( pred ( end => even => odd => end ) ), "$" );
+    if ( LC.config.verbosity >= "Loquacious" ) console.log(`pred 0$ -> $`);
     assert.strictEqual( toString( pred ( end => even => odd => even (
-                                         end => even => odd => end ) ) ), "$" ); console.log(`pred 0$ -> $`)
+                                         end => even => odd => end ) ) ), "$" );
+    if ( LC.config.verbosity >= "Loquacious" ) console.log(`pred 00$ -> $`);
     assert.strictEqual( toString( pred ( end => even => odd => even (
                                          end => even => odd => even (
-                                         end => even => odd => end ) ) ) ), "$" ); console.log(`pred 00$ -> $`)
+                                         end => even => odd => end ) ) ) ), "$" );
   });
   it("ordering",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i*i), n = rnd(i*i); console.log(`compare ${ m } ${ n }`)
+      const m = rnd(i*i), n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" )  console.log(`compare ${ m } ${ n }`);
       assert.strictEqual( compare (fromInt(m)) (fromInt(n)) ("-1") ("0") ("1"), String(Number(m>n) - Number(m<n)) );
     }
   });
   it("comparison",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i*i), n = rnd(i*i); console.log(`compare ${ m } ${ n }`)
+      const m = rnd(i*i), n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`compare ${ m } ${ n }`);
       assert.strictEqual( lt (fromInt(m)) (fromInt(n)) (false)(true), m < n );
       assert.strictEqual( le (fromInt(m)) (fromInt(n)) (false)(true), m <= n );
       assert.strictEqual( eq (fromInt(m)) (fromInt(n)) (false)(true), m == n );
@@ -87,70 +95,73 @@ describe("Binary Scott tests",function(){
   });
   it("addition",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i*i), n = rnd(i*i); console.log(`${ m } + ${ n } = ${ m+n }`)
+      const m = rnd(i*i), n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`${ m } + ${ n } = ${ m+n }`);
       assert.strictEqual( toInt( plus (fromInt(m)) (fromInt(n)) ), m + n );
     }
   });
   it("multiplication",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i*i), n = rnd(i*i); console.log(`${ m } * ${ n } = ${ m*n }`)
+      const m = rnd(i*i), n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`${ m } * ${ n } = ${ m*n }`);
       assert.strictEqual( toInt( times (fromInt(m)) (fromInt(n)) ), m * n );
     }
   });
   it("subtraction",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i*i), n = rnd(i*i); console.log(`subtract ${ m } ${ n }`)
-      const actual = minus (fromInt(m)) (fromInt(n));
-      assert.strictEqual( toInt(actual), Math.max( 0, m - n ) );
-      const lautca = minus (fromInt(n)) (fromInt(m));
-      assert.strictEqual( toInt(lautca), Math.max( 0, n - m ) );
+      const m = rnd(i*i), n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`subtract ${ m } ${ n }`);
+      assert.strictEqual( toInt( minus (fromInt(m)) (fromInt(n)) ), Math.max( 0, m - n ) );
+      assert.strictEqual( toInt( minus (fromInt(n)) (fromInt(m)) ), Math.max( 0, n - m ) );
     }
   });
   it("division",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i*i), n = rnd(i*i); console.log(`division ${ m } ${ n }`)
-      const actual = divMod (fromInt(m)) (fromInt(n||1));
-      assert.deepEqual( toPair(actual).map(toInt), [ m/(n||1)|0, m%(n||1) ] );
-      const lautca = divMod (fromInt(n)) (fromInt(m||1));
-      assert.deepEqual( toPair(lautca).map(toInt), [ n/(m||1)|0, n%(m||1) ] );
+      const m = rnd(i*i), n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`division ${ m } ${ n }`);
+      assert.deepEqual( toPair( divMod (fromInt(m)) (fromInt(n||1)) ).map(toInt), [ m/(n||1)|0, m%(n||1) ] );
+      assert.deepEqual( toPair( divMod (fromInt(n)) (fromInt(m||1)) ).map(toInt), [ n/(m||1)|0, n%(m||1) ] );
     }
   });
   it("exponentiation",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i), n = rnd(i%10); console.log(`${ m } ** ${ n } = ${ m**n }`)
-      const actual = pow (fromInt(m)) (fromInt(n));
-      assert.strictEqual( toInt(actual), m ** n );
+      const m = rnd(i), n = rnd(i%10);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`${ m } ** ${ n } = ${ m**n }`);
+      assert.strictEqual( toInt( pow (fromInt(m)) (fromInt(n)) ), m ** n );
     }
   });
   it("greatest common divisor",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i), n = rnd(i); console.log(`gcd ${ m } ${ n } = ${ refGCD(m)(n) }`)
-      const actual = gcd (fromInt(m)) (fromInt(n));
-      assert.strictEqual( toInt(actual), refGCD(m)(n) );
+      const m = rnd(i), n = rnd(i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`gcd ${ m } ${ n } = ${ refGCD(m)(n) }`);
+      assert.strictEqual( toInt( gcd (fromInt(m)) (fromInt(n)) ), refGCD(m)(n) );
     }
   });
   it("least common multiple",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i), n = rnd(i); console.log(`lcm ${ m } ${ n } = ${ m/(refGCD(m)(n)||1)*n }`)
-      const actual = lcm (fromInt(m)) (fromInt(n));
-      assert.strictEqual( toInt(actual), m / (refGCD(m)(n)||1) * n );
+      const m = rnd(i), n = rnd(i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`lcm ${ m } ${ n } = ${ m/(refGCD(m)(n)||1)*n }`);
+      assert.strictEqual( toInt( lcm (fromInt(m)) (fromInt(n)) ), m / (refGCD(m)(n)||1) * n );
     }
   });
   it("minimum",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i*i), n = rnd(i*i); console.log(`min ${ m } ${ n } = ${ Math.min(m,n) }`)
+      const m = rnd(i*i), n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`min ${ m } ${ n } = ${ Math.min(m,n) }`);
       assert.strictEqual( toInt( min (fromInt(m)) (fromInt(n)) ), Math.min(m,n) );
     }
   });
   it("maximum",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i*i), n = rnd(i*i); console.log(`max ${ m } + ${ n } = ${ Math.max(m,n) }`)
+      const m = rnd(i*i), n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`max ${ m } + ${ n } = ${ Math.max(m,n) }`);
       assert.strictEqual( toInt( max (fromInt(m)) (fromInt(n)) ), Math.max(m,n) );
     }
   });
   it("shifting bits",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const n = rnd(i*i); console.log(`shift ${ n }`)
+      const n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`shift ${ n }`);
       assert.strictEqual( toInt( shiftL (fromInt(n)) ), n >> 1 );
       assert.strictEqual( toInt( shiftR0 (fromInt(n)) ), n << 1 );
       assert.strictEqual( toInt( shiftR1 (fromInt(n)) ), n << 1 | 1 );
@@ -158,7 +169,8 @@ describe("Binary Scott tests",function(){
   });
   it("zero padding",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const n = rnd(i*i); console.log(`isPadded ${ n }`)
+      const n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`isPadded ${ n }`);
       assert.strictEqual( isPadded (fromInt(n)) (false)(true), false );
       assert.strictEqual( isPadded (pad(fromInt(n))) (false)(true), true );
       assert.strictEqual( isPadded (pad(pad(fromInt(n)))) (false)(true), true );
@@ -167,38 +179,44 @@ describe("Binary Scott tests",function(){
   });
   it("bitwise and",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i*i), n = rnd(i*i); console.log(`${ m } & ${ n } = ${ m&n }`)
+      const m = rnd(i*i), n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`${ m } & ${ n } = ${ m&n }`);
       assert.strictEqual( toInt( bitAnd (fromInt(m)) (fromInt(n)) ), m & n );
     }
   });
   it("bitwise or",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i*i), n = rnd(i*i); console.log(`${ m } | ${ n } = ${ m|n }`)
+      const m = rnd(i*i), n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`${ m } | ${ n } = ${ m|n }`);
       assert.strictEqual( toInt( bitOr (fromInt(m)) (fromInt(n)) ), m | n );
     }
   });
   it("bitwise exclusive or",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i*i), n = rnd(i*i); console.log(`${ m } ^ ${ n } = ${ m^n }`)
+      const m = rnd(i*i), n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`${ m } ^ ${ n } = ${ m^n }`);
       assert.strictEqual( toInt( bitXor (fromInt(m)) (fromInt(n)) ), m ^ n );
-    }
-  });
-  it("setting bits",()=>{
-    for ( let i=1; i<=100; i++ ) {
-      const j = rnd(i%32); console.log(`bit ${ j } = ${ 1<<j }`)
-      assert.strictEqual( toInt( bit (fromInt(j)) ), 1<<j ); // JS restricted to 32-bit
     }
   });
   it("testing bits",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const j = rnd(i%32), n = rnd(i*i); console.log(`testBit ${ j } ${ n } = ${ Boolean( n & 1<<j ) }`)
+      const j = rnd(i%32), n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`testBit ${ j } ${ n } = ${ Boolean( n & 1<<j ) }`);
       assert.strictEqual( testBit (fromInt(j)) (fromInt(n)) (false)(true), Boolean( n & 1<<j ) ); // JS restricted to 32-bit
+    }
+  });
+  it("setting bits",()=>{
+    for ( let i=1; i<=100; i++ ) {
+      const j = rnd(i%32);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`bit ${ j } = ${ 1<<j }`);
+      assert.strictEqual( toInt( bit (fromInt(j)) ), 1<<j ); // JS restricted to 32-bit
     }
   });
   it("population count",()=>{
     const refPopCount = n => n && 1 + refPopCount(n & n-1) ;
     for ( let i=1; i<=100; i++ ) {
-      const n = rnd(i*i); console.log(`popCount ${ n } = ${ refPopCount(n) }`)
+      const n = rnd(i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`popCount ${ n } = ${ refPopCount(n) }`);
       assert.strictEqual( toInt( popCount (fromInt(n)) ), refPopCount(n) ); // JS restricted to 32-bit
     }
   });
@@ -232,7 +250,8 @@ describe("Binary Scott tests",function(){
   });
   it("parity",()=>{
     for ( let i=1; i<=100; i++ ) {
-      const n = rnd(i*i*i); console.log(`parity ${ n }`)
+      const n = rnd(i*i*i);
+      if ( LC.config.verbosity >= "Loquacious" ) console.log(`parity ${ n }`);
       assert.strictEqual( odd (fromInt(n)) (false)(true), Boolean(n&1) );
       assert.strictEqual( even (fromInt(n)) (false)(true), ! (n&1) );
     }
