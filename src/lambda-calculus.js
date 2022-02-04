@@ -72,15 +72,31 @@ function fromIntWith(cfg={}) {
   const {numEncoding,verbosity} = Object.assign( {}, config, cfg );
   return function fromInt(n) {
     if ( numEncoding === "Church" )
-      return new L("s", new L("z", Array(n).fill().reduce( s => new A(new V("s"), s), new V("z")) ));
+      if ( n >= 0 )
+        return new L("s", new L("z", Array(n).fill().reduce( s => new A(new V("s"), s), new V("z")) ));
+      else {
+        if ( verbosity >= "Concise" ) console.error(`fromInt.Church: negative number ${ n }`);
+        throw new RangeError;
+      }
     else if ( numEncoding === "Scott" ) // data Int = Zero | Succ Int
-      return new Array(n).fill().reduce( v => new L('_', new L('f', new A(new V('f'), v))), new L('z', new L('_', new V('z'))) );
-    else if ( numEncoding === "BinaryScott" ) { // data Int = End | Even Int | Odd Int // LittleEndian, padding ( trailing ) 0 bits are possible in practice
-      const zero = new L('z', new L('_', new L('_', new V('z'))));
-      return n ? n.toString(2).split("").reduce( (z,bit) => new L('_', new L('f', new L('t', new A(new V( bit==='0' ? 'f' : 't' ), z)))), zero ) : zero ;
-    } else if ( numEncoding === "None" )
-      throw EvalError("This kata does not allow for number constants");
-    else
+      if ( n >= 0 )
+        return new Array(n).fill().reduce( v => new L('_', new L('f', new A(new V('f'), v))), new L('z', new L('_', new V('z'))) );
+      else {
+        if ( verbosity >= "Concise" ) console.error(`fromInt.Scott: negative number ${ n }`);
+        throw new RangeError;
+      }
+    else if ( numEncoding === "BinaryScott" ) // data Int = End | Even Int | Odd Int // LittleEndian, padding ( trailing ) 0 bits are out of spec - behaviour is undefined
+      if ( n >= 0 ) {
+        const zero = new L('z', new L('_', new L('_', new V('z'))));
+        return n ? n.toString(2).split("").reduce( (z,bit) => new L('_', new L('f', new L('t', new A(new V( bit==='0' ? 'f' : 't' ), z)))), zero ) : zero ;
+      } else {
+        if ( verbosity >= "Concise" ) console.error(`fromInt.BinaryScott: negative number ${ n }`);
+        throw new RangeError;
+      }
+    else if ( numEncoding === "None" ) {
+      if ( verbosity >= "Concise" ) console.error(`fromInt.None: number ${ n }`);
+      throw new EvalError;
+    } else
       return numEncoding.fromInt(n); // Custom encoding
   } ;
 }
@@ -106,10 +122,10 @@ function toIntWith(cfg={}) {
       } else if (numEncoding === "None") {
         return term;
       } else {
-        return numEncoding.toInt(term);
+        return numEncoding.toInt(term); // Custom encoding
       }
     } catch (e) {
-      if ( verbosity >= "Concise" ) console.error(`toInt: Term is not a number ( or encoding is wrong ) evaluating ${ term }`);
+      if ( verbosity >= "Concise" ) console.error(`toInt: ${ term } is not a number in numEncoding ${ numEncoding }`);
       throw e;
     }
   } ;
@@ -130,7 +146,7 @@ function parseWith(cfg={}) {
             if ( nm in env )
               return new A( new L(nm,tm), env[nm] );
             else {
-              if ( verbosity >= "Concise" ) console.error(`undefined free variable ${ nm } while defining ${ name } = ${ term }`);
+              if ( verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
               throw new ReferenceError(`undefined free variable ${ nm }`);
             }
           } , term );
@@ -141,7 +157,7 @@ function parseWith(cfg={}) {
               else if ( nm in env )
                 return new A( new L(nm,tm), env[nm] );
               else {
-                if ( verbosity >= "Concise" ) console.error(`undefined free variable ${ nm } while defining ${ name } = ${ term }`);
+                if ( verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
                 throw new ReferenceError(`undefined free variable ${ nm }`);
               }
             }
@@ -149,7 +165,7 @@ function parseWith(cfg={}) {
           );
         else if ( purity==="PureLC" )
           if ( FV.size ) {
-            if ( verbosity >= "Concise" ) console.error(`unresolvable free variable(s) ${ Array.from(FV) } while defining ${ name } = ${ term }`);
+            if ( verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
             throw new EvalError(`unresolvable free variable(s) ${ Array.from(FV) }: all expressions must be closed in PureLC mode`);
           } else
             return term;
@@ -284,7 +300,7 @@ function compileWith(cfg={}) {
         // Custom undefined error when trying to access functions not defined in environment
         const result = Reflect.get(target, property);
         if (result === undefined) {
-          throw ReferenceError(`${property} is not defined.`);
+          throw ReferenceError(`${ property } is not defined.`);
         } else {
           return result;
         }
