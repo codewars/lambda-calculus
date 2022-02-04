@@ -1,8 +1,20 @@
+# Why?
+
 ### @kazk wrote in July 2021
 
 Who's interested? What are you planning to do? Why do you think it's good for Codewars?
 
 Tell me why you guys are interested in it. Tell me why others might be interested in it. If it teaches them something new, that's a plus too.
+
+# Short answer
+
+It's good for programmers to know it, and people seem to realise that. It's also perceived as _fun_ to work with. People indeed _are_ gaining an increased understanding of computation, and _are_ applying that in other languages.
+
+Making it accessible and easy to work with ( ie, solve and author kata in ) can only grow the user base, and we aim to provide that accessibility and easiness - and we have fun doing it. We are also learning a ton doing it.
+
+What's good for subscribers is ultimately good for Codewars.
+
+# Supporting anecdotal evidence
 
 ### @Kacarott wrote in Jul 2021
 
@@ -26,7 +38,7 @@ So the base of interested users is already there. By cementing LC as a language,
 Benefits for new users:
 
 * Learning LC greatly facilitates understanding of functional languages
-* The ‘fun’ of an esoteric style language, but which builds real understanding and knowledge (to be applied in other languages)
+* The ‘fun’ of an esoteric style language, but which builds real understanding and knowledge ( to be applied in other languages )
 
 Benefits for Codewars:
 
@@ -47,6 +59,14 @@ It may seem like a very limited low level language, but once you write a couple 
 Personally, I think it's beautiful and it helped me become a better programmer.
 
 @JohanWiltink: I can only fully agree with these sentiments; I feel exactly the same way.
+
+### [James Iry](https://www.blogger.com/profile/02835376424060382389) [wrote](http://james-iry.blogspot.com/2009/05/brief-incomplete-and-mostly-wrong.html) in 2009
+
+1936 - Alan Turing invents every programming language that will ever be but is shanghaied by British Intelligence to be 007 before he can patent them.
+
+1936 - Alonzo Church also invents every language that will ever be _but does it better._ His lambda calculus is ignored because it is insufficiently C-like. This criticism occurs in spite of the fact that C has not yet been invented.
+
+@JohanWiltink: my emphasis. Lambda Calculus encodes Life, The Universe and Everything, and does it _well._
 
 ### Update Jan 2022
 
