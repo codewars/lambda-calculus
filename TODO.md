@@ -6,6 +6,7 @@
 1.  side effects? keywords for magic things like print to console? maybe just give `stdin` and `stdout` preloaded and inspect them afterwards?
 1.  ~prettier error messages ( we already use an index into the current string for that. may be OK already )~
 1.  compiler / evaluator debugging output dependent on log level
+
     * `Calm` should log nothing and just throw errors on failure.
     * `Concise` could log what is being compiled: the name but not the definition. do not enter into recursion.
     * `Loquacious` could then also log definitions.
@@ -14,6 +15,7 @@
     `eval` can do something analogous. show exactly where any `Error` is thrown, and dump the environment at higher levels.
 1.  ~tidy line 127 in src/lambda-calculus.js ( the free variables check wrapper )~
     > ~This is why I wrap terms with the environment at that moment.~
+
     This should get done with the redesign to terms having an environment
     
     Generally, go over, `lint` and `indent` code
