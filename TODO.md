@@ -17,10 +17,10 @@
     > ~This is why I wrap terms with the environment at that moment.~
 
     This should get done with the redesign to terms having an environment
-    
+
     Generally, go over, `lint` and `indent` code
 1.  constants. currently all variables can not only be shadowed but also overwritten. this might mean introducing full scoping, and might not be worth it. or is it just a matter of tagging names in the environment?
 1.  ~`boolEncoding` ? LC bools translate perfectly to JS choice functions; this might also not be worth it.~ not worth it
 1.  Strings ( would depend on list, char _and_ number encodings; the concept seems too high level for LC )
 1.  Make helper functions available, maybe as `LC.helpers` or with `#import` ( datatype en/decoders, standard combinators ). "Standard library" support, including a standard library? Can be showcased in example kata for now.
-1.  Write some large kata for stress testing.
+1.  ~Write some large kata for stress testing.~
