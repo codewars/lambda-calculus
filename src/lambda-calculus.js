@@ -64,6 +64,9 @@ class A {
   }
 }
 
+// can be extended with call by need functionality
+class Env extends Map {}
+
 // Term and Env pair, used internally to keep track of current computation in eval
 class Tuple {
   constructor(term,env) { Object.assign(this,{term,env}); }
@@ -72,13 +75,13 @@ class Tuple {
 }
 
 // Used to insert an external (JS) value into evaluation manually (avoiding implicit number conversion)
-function Primitive(v) { return new Tuple(new V("<primitive>"), new Map([["<primitive>", v]])); }
+function Primitive(v) { return new Tuple(new V( v.name || "<primitive>" ), new Env([[ v.name || "<primitive>" , v ]])); }
 
 const primitives = {
   trace: function(v) { console.log(String(v.term)); return v; }
 }
 
-for (const p in primitives) {
+for ( const p in primitives ) {
   primitives[p] = Primitive(primitives[p]);
 }
 
@@ -312,7 +315,7 @@ function compileWith(cfg={}) {
             : env._cache.set( name, evalLC(term) ).get(name);
           }
         });
-    env._cache = new Map;
+    env._cache = new Map; // this needs tearing down when Env gets smart
     const envHandler = {
       get: function (target, property) {
         // Custom undefined error when trying to access functions not defined in environment
@@ -338,8 +341,8 @@ function evalLC(term) {
     const result = function (arg) {
       let argEnv;
       if ( arg.term && arg.env ) ({ term: arg, env: argEnv } = arg); // If callback is passed another callback, or a term
-      const termVal = new Tuple( typeof arg !== 'number' ? arg : fromInt(arg) , new Map(argEnv) );
-      const newEnv = new Map(env).set(term.name, termVal);
+      const termVal = new Tuple( typeof arg !== 'number' ? arg : fromInt(arg) , new Env(argEnv) );
+      const newEnv = new Env(env).set(term.name, termVal);
       return runEval(new Tuple(term.body, newEnv), stack);
     } ;
 
@@ -360,13 +363,13 @@ function evalLC(term) {
             ({term, env} = res);
         }
       else if ( term instanceof A ) {
-        stack.push([ new Tuple(term.right, new Map(env)), true ]);
+        stack.push([ new Tuple(term.right, new Env(env)), true ]);
         term = term.left;
       } else if ( term instanceof L ) {
         let [ { term: lastTerm, env: lastEnv }, isRight ] = stack.pop();
         if ( isRight ) {
           if ( term.name !== "_" ) {
-            env = new Map(env).set(term.name, new Tuple(lastTerm, lastEnv));
+            env = new Env(env).set(term.name, new Tuple(lastTerm, lastEnv));
           }
           term = term.body;
         } else { // Pass the function some other function. This might need redoing
@@ -379,14 +382,14 @@ function evalLC(term) {
         if ( stack.length === 0 ) return term;
         let [ { term: lastTerm, env: lastEnv }, isRight ] = stack.pop();
         if ( isRight ) {
-          stack.push([ new Tuple(term, new Map(env)), false ]);
+          stack.push([ new Tuple(term, new Env(env)), false ]);
           term = lastTerm;
           env = lastEnv;
         } else { // lastTerm is a JS function
           let res = lastTerm(term);
           if ( res.term ) {
             ({term, env} = res);
-            if ( ! env ) env = new Map;
+            if ( ! env ) env = new Env;
           } else
             term = res;
         }
@@ -395,7 +398,7 @@ function evalLC(term) {
     // We need input
     return awaitArg(term, stack, env);
   }
-  return runEval(new Tuple(term, new Map), []);
+  return runEval(new Tuple(term, new Env), []);
 }
 
 Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { return toInt(this); } } );
