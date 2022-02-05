@@ -64,14 +64,22 @@ class A {
   }
 }
 
-// Used to insert an external (JS) value into evaluation manually (avoiding implicit number conversion)
-function Primitive(v) { return new Tuple(new V("<primitive>"), new Map([["<primitive>", v]])); }
-
 // Term and Env pair, used internally to keep track of current computation in eval
 class Tuple {
   constructor(term,env) { Object.assign(this,{term,env}); }
   valueOf() { return toInt(this.term); }
   toString() { return this.term.toString(); }
+}
+
+// Used to insert an external (JS) value into evaluation manually (avoiding implicit number conversion)
+function Primitive(v) { return new Tuple(new V("<primitive>"), new Map([["<primitive>", v]])); }
+
+const primitives = {
+  trace: function(v) { console.log(String(v.term)); return v; }
+}
+
+for (const p in primitives) {
+  primitives[p] = Primitive(primitives[p]);
 }
 
 const Y = new L("f",new A(new L("x",new A(new V("f"),new A(new V("x"),new V("x")))),new L("x",new A(new V("f"),new A(new V("x"),new V("x"))))));
@@ -388,14 +396,6 @@ function evalLC(term) {
     return awaitArg(term, stack, env);
   }
   return runEval(new Tuple(term, new Map), []);
-}
-
-const primitives = {
-  trace: function(v) { console.log(String(v.term)); return v; }
-}
-
-for (const p in primitives) {
-  primitives[p] = Primitive(primitives[p]);
 }
 
 Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { return toInt(this); } } );
