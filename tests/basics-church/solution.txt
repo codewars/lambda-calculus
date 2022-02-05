@@ -1,0 +1,54 @@
+# Church Number
+
+#import Combinators.lc
+
+B  = \ f g x . f (g x)
+C  = \ f x y . f y x
+I  = \ x . x
+K  = \ x _ . x
+KI = \ _ x . x
+M  = \ x . x x
+S  = \ f g x . f x (g x)
+T  = \ x f . f x
+V  = \ x y f . f x y
+W  = \ f x . f x x
+Y  = \ f . ( \ x . f (x x) ) ( \ x . f (x x) )
+Z  = \ f . ( \ x . f \ y . x x y ) ( \ x . f \ y . x x y )
+
+#import ChurchBoolean.lc
+
+True  = \ t f . t
+False = \ t f . f
+
+not = \ b . b False True
+and = \ a b . a b a
+or  = \ a . a a
+xor = \ a b . a (not b) b
+implies = \ a b . a b True
+
+# data Number = Zero | Succ Zero
+
+zero = KI
+
+isZero = \ n . n (K False) True
+
+# instance Enum
+
+succ = \ n . \ f x . f (n f x)
+pred = \ n . \ f x . n ( \ g h . h (g f) ) (K x) I
+pred = \ m . m ( \ k n m . k m (succ m) ) K zero zero
+
+# instance Num
+
+plus  = \ m n . \ f x . n f (m f x)
+times = \ m n . \ f . n (m f)
+pow   = \ m n . n m
+minus = \ m n . n pred m
+
+# instance Ord
+
+le = \ m n . isZero (minus m n)
+ge = \ m n . isZero (minus n m)
+eq = \ m n . and (le m n) (ge m n)
+lt = \ m n . ( \ le ge . and le (not ge) ) (le m n) (ge m n)
+gt = \ m n . ( \ le ge . and ge (not le) ) (le m n) (ge m n)

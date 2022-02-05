@@ -3,6 +3,7 @@
 const {chdir} = process;
 
 const examples = [ "basics-binary-scott"
+                 , "basics-church"
                  , "hello-world"
                  , "counter"
                  , "delta-generators"

@@ -137,7 +137,7 @@ describe("Binary Scott tests",function(){
       assert.strictEqual( toInt( gcd (fromInt(m)) (fromInt(n)) ), refGCD(m)(n) );
     }
   });
-  it("least common multiple",()=>{
+  it.skip("least common multiple",()=>{
     for ( let i=1; i<=100; i++ ) {
       const m = rnd(i), n = rnd(i);
       if ( LC.config.verbosity >= "Loquacious" ) console.log(`lcm ${ m } ${ n } = ${ m/(refGCD(m)(n)||1)*n }`);
