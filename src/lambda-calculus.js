@@ -64,6 +64,16 @@ class A {
   }
 }
 
+// Used to insert an external (JS) value into evaluation manually (avoiding implicit number conversion)
+function Primitive(v) { return new Tuple(new V("<primitive>"), new Map([["<primitive>", v]])); }
+
+// Term and Env pair, used internally to keep track of current computation in eval
+class Tuple {
+  constructor(term,env) { Object.assign(this,{term,env}); }
+  valueOf() { return toInt(this.term); }
+  toString() { return this.term.toString(); }
+}
+
 const Y = new L("f",new A(new L("x",new A(new V("f"),new A(new V("x"),new V("x")))),new L("x",new A(new V("f"),new A(new V("x"),new V("x"))))));
 
 function fromInt(n) { return fromIntWith()(n); }
@@ -108,7 +118,7 @@ function toIntWith(cfg={}) {
   return function toInt(term) {
     try {
       if ( numEncoding === "Church" )
-        return term ( x => x+1 ) ( new V(0), new Map([[0,[0]]]) );
+        return term ( x => x+1 ) ( Primitive(0) );
       else if ( numEncoding === "Scott" ) {
         let result = 0, evaluating = true;
         while ( evaluating )
@@ -276,7 +286,7 @@ function parseWith(cfg={}) {
                 .replace( /\n(?=\s)/g, "" )
                 .split( '\n' )
                 .filter( term => /\S/.test(term) )
-                .reduce(parseTerm,{});
+                .reduce(parseTerm, Object.assign({}, primitives));
   }
 }
 
@@ -310,59 +320,82 @@ function compileWith(cfg={}) {
   } ;
 }
 
+// Top level call, only used to begin evaluation of a closed term
 function evalLC(term) {
 
   // builds function to return to user (representing an abstraction awaiting input)
-  function awaitArg(term, stack, boundVars) {
+  function awaitArg(term, stack, env) {
 
     // callback function which will apply the input to the term
-    const result = function (arg, env) {
-      if (!env && arg.term && arg.env) [arg, env] = [arg.term, arg.env]; // If callback is passed another callback
-      const termVal = [typeof arg !== 'number'?arg:fromInt(arg), new Map(env)];
-      const newEnv = new Map(boundVars).set(term.name, termVal);
-      return runEval(term.body, stack, newEnv);
+    const result = function (arg) {
+      let argEnv;
+      if (arg.term && arg.env) ({term: arg, env: argEnv} = arg); // If callback is passed another callback, or a term
+      const termVal = new Tuple(typeof arg !== 'number'?arg:fromInt(arg), new Map(argEnv));
+      const newEnv = new Map(env).set(term.name, termVal);
+      return runEval(new Tuple(term.body, newEnv), stack);
     } ;
 
     // object 'methods/attributes'
     result.term = term;
-    result.env = boundVars;
+    result.env = env;
     return result;
   }
 
-  function runEval(term, stack, boundVars) { // stack: [[term, env, isRight]], boundVars = {name: [term, env]}
+  function runEval(arg, stack) { // stack: [[term, isRight]], arg: Tuple, arg.env = {name: term}
+    let {term, env} = arg;
     while (!(term instanceof L) || stack.length > 0) {
       if (term instanceof V)
         if ( term.name==="()" )
           { console.error(`eval: evaluating undefined inside definition of "${term.defName}"`); throw new EvalError; }
-        else
-          [term, boundVars] = boundVars.get(term.name);
+        else {
+          let res = env.get(term.name);
+          if (!res.env) term = res;
+          else ({term, env} = res);
+        }
       else if (term instanceof A) {
-        stack.push([term.right, new Map(boundVars), true]);
+        stack.push([new Tuple(term.right, new Map(env)), true]);
         term = term.left;
       } else if (term instanceof L) {
-        let [lastTerm, lastEnv, isRight] = stack.pop();
+        let [{term: lastTerm, env: lastEnv}, isRight] = stack.pop();
         if (isRight) {
           if (term.name !== "_") {
-            boundVars = new Map(boundVars).set(term.name, [lastTerm, lastEnv]);
+            env = new Map(env).set(term.name, new Tuple(lastTerm, lastEnv));
           }
           term = term.body;
         } else { // Pass the function some other function. This might need redoing
-          term = lastTerm(awaitArg(term, stack, boundVars));
+          term = lastTerm(awaitArg(term, stack, env));
         }
+      } else if (term instanceof Tuple) {
+        // for primitives
+        ({term, env} = term);
       } else { // Not a term
         if (stack.length == 0) return term;
-        let [lastTerm, lastEnv, isRight] = stack.pop();
+        let [{term: lastTerm, env: lastEnv}, isRight] = stack.pop();
         if (isRight) {
-          stack.push([term, new Map(boundVars), false]);
+          stack.push([new Tuple(term, new Map(env)), false]);
           term = lastTerm;
-          boundVars = lastEnv;
-        } else
-          term = lastTerm(term);
+          env = lastEnv;
+        } else { // lastTerm is a JS function
+          let res = lastTerm(term);
+          if (res.term) {
+            ({term, env} = res);
+            if (!env) env = new Map;
+          } else term = res;
+        }
       }
     }
-    return awaitArg(term, stack, boundVars);
+    // We need input
+    return awaitArg(term, stack, env);
   }
-  return runEval(term, [], new Map);
+  return runEval(new Tuple(term, new Map), []);
+}
+
+const primitives = {
+  trace: function(v) { console.log(String(v.term)); return v; }
+}
+
+for (const p in primitives) {
+  primitives[p] = Primitive(primitives[p]);
 }
 
 Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { return toInt(this); } } );
