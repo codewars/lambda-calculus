@@ -319,12 +319,12 @@ function compileWith(cfg={}) {
     const env = parseWith({numEncoding,purity,verbosity})(code);
     const r = {};
     for ( const [name] of env )
-      Object.defineProperty( r, name, { get() { return env.getValue(name); } } );
+      Object.defineProperty( r, name, { get() { return env.getValue(name); }, enumerable: true } );
     return r;
   } ;
 }
 
-// Top level call, only used to begin evaluation of a closed term
+// Top level call, term :: Tuple
 function evalLC(term) {
 
   // builds function to return to user (representing an abstraction awaiting input)
@@ -362,7 +362,7 @@ function evalLC(term) {
           if ( term.name !== "_" )
             env = new Env(env).setThunk(term.name, () => evalLC(new Tuple(lastTerm, lastEnv)));
           term = term.body;
-        } else { // Pass the function some other function. This might need redoing // either redo or not. if it works, don't fix it.
+        } else { // Pass the function some other function.
           term = lastTerm(awaitArg(term, stack, env));
         }
       } else if ( term instanceof Tuple ) {
