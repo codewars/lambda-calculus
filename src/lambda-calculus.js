@@ -64,9 +64,10 @@ class A {
   }
 }
 
-// can be extended with call by need functionality
 class Env extends Map {
-  // inherited set, get necessary for copying references
+  // use inherited set, get for copying references
+  // insert and retrieve values with setThunk and getValue
+  // encoding of value is a Generator Object that yields value forever - this is opaque
   setThunk(i,thunk) {
     this.set(i, function*() {
       // console.warn(`expensively calculating ${ i }`);
@@ -88,7 +89,7 @@ class Tuple {
   toString() { return this.term.toString(); }
 }
 
-// Used to insert an external (JS) value into evaluation manually (avoiding implicit number conversion)
+// Used to insert an external (JS) value into evaluation manually ( avoiding implicit number conversion )
 function Primitive(v) { return new Tuple(new V( "<primitive>" ), new Env([[ "<primitive>" , function*() { while ( true ) yield v; } () ]])); }
 
 const primitives = new Env;
@@ -137,9 +138,9 @@ function toIntWith(cfg={}) {
   const {numEncoding,verbosity} = Object.assign( {}, config, cfg );
   return function toInt(term) {
     try {
-      if ( numEncoding === "Church" )
-        return term ( x => x+1 ) ( Primitive(0) );
-      else if ( numEncoding === "Scott" ) {
+      if ( numEncoding === "Church" ) {
+        return term ( x => x+1 ) ( Primitive(0) ); // still stack-limited
+      } else if ( numEncoding === "Scott" ) {
         let result = 0, evaluating = true;
         while ( evaluating )
           term ( () => evaluating = false ) ( n => () => { term = n; result++ } ) ();
@@ -149,11 +150,10 @@ function toIntWith(cfg={}) {
         while ( evaluating )
           term ( () => evaluating = false ) ( n => () => { term = n; bit *= 2 } ) ( n => () => { term = n; result += bit; bit *= 2 } ) ();
         return result;
-      } else if (numEncoding === "None") {
+      } else if ( numEncoding === "None" )
         return term;
-      } else {
+      else
         return numEncoding.toInt(term); // Custom encoding
-      }
     } catch (e) {
       if ( verbosity >= "Concise" ) console.error(`toInt: ${ term } is not a number in numEncoding ${ numEncoding }`);
       throw e;
@@ -161,7 +161,7 @@ function toIntWith(cfg={}) {
   } ;
 }
 
-// parse :: String -> {String: Term}
+// parse :: String -> Env { String => Term }
 function parse(code) { return parseWith()(code); }
 
 function parseWith(cfg={}) {
@@ -303,11 +303,11 @@ function parseWith(cfg={}) {
       } else
         error(i,"defn: incomplete parse");
     }
-    return code.replace( /#.*$/gm, "" ) // Ignore comments
-                .replace( /\n(?=\s)/g, "" )
-                .split( '\n' )
-                .filter( term => /\S/.test(term) )
-                .reduce(parseTerm, new Env(primitives));
+    return code.replace( /#.*$/gm, "" )                  // ignore comments
+                .replace( /\n(?=\s)/g, "" )              // continue lines
+                .split( '\n' )                           // split lines
+                .filter( term => /\S/.test(term) )       // skip empty lines
+                .reduce(parseTerm, new Env(primitives)); // parse lines
   }
 }
 
@@ -319,9 +319,7 @@ function compileWith(cfg={}) {
     const env = parseWith({numEncoding,purity,verbosity})(code);
     const r = {};
     for ( const [name] of env )
-      Object.defineProperty( r, name, {
-        get() { return env.getValue(name); }
-      } );
+      Object.defineProperty( r, name, { get() { return env.getValue(name); } } );
     return r;
   } ;
 }
@@ -333,23 +331,21 @@ function evalLC(term) {
   function awaitArg(term, stack, env) {
 
     // callback function which will apply the input to the term
-    const result = function (arg) {
+    function result(arg) {
       let argEnv;
       if ( arg.term && arg.env ) ({ term: arg, env: argEnv } = arg); // If callback is passed another callback, or a term
       const termVal = new Tuple( typeof arg !== 'number' ? arg : fromInt(arg) , new Env(argEnv) );
       const newEnv = new Env(env).setThunk(term.name, () => evalLC(termVal));
       return runEval(new Tuple(term.body, newEnv), stack);
-    } ;
-
-    // object 'methods/attributes'
+    }
     return Object.assign( result, {term,env} );
   }
 
-  function runEval({term,env},stack) { // stack: [[term, isRight]], arg: Tuple, env = {name: term}
-    while ( ! (term instanceof L) || stack.length > 0 ) {
+  function runEval({term,env},stack) { // stack: [[term, isRight]], term: LC term, env = Env { name => term }
+    while ( ! ( term instanceof L ) || stack.length > 0 ) {
       if ( term instanceof V )
         if ( term.name==="()" )
-          { console.error(`eval: evaluating undefined inside definition of "${term.defName}"`); throw new EvalError; }
+          { console.error(`eval: evaluating undefined inside definition of "${term.defName}"`); throw new EvalError; } // depend on verbosity here
         else {
           let res = env.getValue(term.name);
           if ( ! res.env )
@@ -363,11 +359,10 @@ function evalLC(term) {
       } else if ( term instanceof L ) {
         let [ { term: lastTerm, env: lastEnv }, isRight ] = stack.pop();
         if ( isRight ) {
-          if ( term.name !== "_" ) {
+          if ( term.name !== "_" )
             env = new Env(env).setThunk(term.name, () => evalLC(new Tuple(lastTerm, lastEnv)));
-          }
           term = term.body;
-        } else { // Pass the function some other function. This might need redoing
+        } else { // Pass the function some other function. This might need redoing // either redo or not. if it works, don't fix it.
           term = lastTerm(awaitArg(term, stack, env));
         }
       } else if ( term instanceof Tuple ) {
