@@ -68,17 +68,19 @@ class Env extends Map {
   // use inherited set, get for copying references
   // insert and retrieve values with setThunk and getValue
   // encoding of value is a Generator Object that yields value forever - this is opaque
-  setThunk(i,thunk) {
+  setThunk(i,val) {
     this.set(i, function*() {
       // console.warn(`expensively calculating ${ i }`);
-      const result = thunk();
+      let result = (yield val) ?? val; // If val is not A or V, then it need not be evaluated
       while ( true ) yield result;
     } () );
     return this;
   }
-  getValue(i) {
+  // Second argument provides an interface for storing the evaluated term inside
+  // the generator, for future accesses.
+  getValue(i, result) {
     // console.warn(`inexpensively  fetching ${ i }`);
-    return this.get(i).next().value;
+    return this.get(i).next(result).value;
   }
 }
 
@@ -93,7 +95,7 @@ class Tuple {
 function Primitive(v) { return new Tuple(new V( "<primitive>" ), new Env([[ "<primitive>" , function*() { while ( true ) yield v; } () ]])); }
 
 const primitives = new Env;
-primitives.setThunk( "trace", () => evalLC(new Tuple( Primitive( function(v) { console.log(String(v.term)); return v; } ), new Env )) );
+primitives.setThunk( "trace", new Tuple( Primitive( function(v) { console.log(String(v.term)); return v; } ), new Env ) );
 
 const Y = new L("f",new A(new L("x",new A(new V("f"),new A(new V("x"),new V("x")))),new L("x",new A(new V("f"),new A(new V("x"),new V("x"))))));
 
@@ -299,7 +301,7 @@ function parseWith(cfg={}) {
       if ( i===code.length ) {
         const [name,term] = r;
         const wrapped = wrap(name,term);
-        return env.setThunk( name, () => evalLC(wrapped) );
+        return env.setThunk( name, wrapped);
       } else
         error(i,"defn: incomplete parse");
     }
@@ -319,7 +321,7 @@ function compileWith(cfg={}) {
     const env = parseWith({numEncoding,purity,verbosity})(code);
     const r = {};
     for ( const [name] of env )
-      Object.defineProperty( r, name, { get() { return env.getValue(name); }, enumerable: true } );
+      Object.defineProperty( r, name, { get() { return evalLC(new Tuple(new V(name), env)); }, enumerable: true } );
     return r;
   } ;
 }
@@ -335,13 +337,16 @@ function evalLC(term) {
       let argEnv;
       if ( arg.term && arg.env ) ({ term: arg, env: argEnv } = arg); // If callback is passed another callback, or a term
       const termVal = new Tuple( typeof arg !== 'number' ? arg : fromInt(arg) , new Env(argEnv) );
-      const newEnv = new Env(env).setThunk(term.name, () => evalLC(termVal));
+      const newEnv = new Env(env).setThunk(term.name, termVal);
       return runEval(new Tuple(term.body, newEnv), stack);
     }
     return Object.assign( result, {term,env} );
   }
 
-  function runEval({term,env},stack) { // stack: [[term, isRight]], term: LC term, env = Env { name => term }
+  // term :: Tuple
+  // isRight :: bool (indicating whether the term is left or right side of an Application)
+  // isEvaluated :: bool (indicating whether the current term should be stored in the Env)
+  function runEval({term,env},stack) { // stack: [[term, isRight, isEvaluated]], term: LC term, env = Env { name => term }
     while ( ! ( term instanceof L ) || stack.length > 0 ) {
       if ( term instanceof V )
         if ( term.name==="()" )
@@ -350,17 +355,25 @@ function evalLC(term) {
           let res = env.getValue(term.name);
           if ( ! res.env )
             term = res;
-          else
+          else {
+            if (res.term instanceof V || res.term instanceof A)
+              // Push a frame to the stack to indicate when the value should be stored back
+              stack.push( [new Tuple( term, env ), false, true ] );
             ({term, env} = res);
+          }
         }
       else if ( term instanceof A ) {
         stack.push([ new Tuple(term.right, new Env(env)), true ]);
         term = term.left;
       } else if ( term instanceof L ) {
-        let [ { term: lastTerm, env: lastEnv }, isRight ] = stack.pop();
-        if ( isRight ) {
+        let [ { term: lastTerm, env: lastEnv }, isRight, isEvaluated ] = stack.pop();
+        if ( isEvaluated ) {
+          // A non-evaluated term was received from an Env, but it is now evaluated.
+          // Store it.
+          lastEnv.getValue(lastTerm.name, new Tuple(term, env));
+        } else if ( isRight ) {
           if ( term.name !== "_" )
-            env = new Env(env).setThunk(term.name, () => evalLC(new Tuple(lastTerm, lastEnv)));
+            env = new Env(env).setThunk(term.name, new Tuple(lastTerm, lastEnv));
           term = term.body;
         } else { // Pass the function some other function.
           term = lastTerm(awaitArg(term, stack, env));
@@ -370,8 +383,12 @@ function evalLC(term) {
         ({term, env} = term);
       } else { // Not a term
         if ( stack.length === 0 ) return term;
-        let [ { term: lastTerm, env: lastEnv }, isRight ] = stack.pop();
-        if ( isRight ) {
+        let [ { term: lastTerm, env: lastEnv }, isRight, isEvaluated ] = stack.pop();
+        if ( isEvaluated ) {
+          // A non-evaluated term was received from an Env, but it is now evaluated.
+          // Store it.
+          lastEnv.getValue(lastTerm.name, new Tuple(term, env));
+        } else if ( isRight ) {
           stack.push([ new Tuple(term, new Env(env)), false ]);
           term = lastTerm;
           env = lastEnv;
