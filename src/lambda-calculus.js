@@ -23,7 +23,7 @@ const config = { verbosity: "Calm"      //  Calm | Concise | Loquacious | Verbos
                };
 
 function union(left, right) {
-  let r = new Set(left);
+  const r = new Set(left);
   for ( const name of right ) r.add(name);
   return r;
 }
@@ -40,7 +40,7 @@ class L {
     this.body = body;
   }
   free() {
-    let r = this.body.free();
+    const r = this.body.free();
     r.delete(this.name);
     return r;
   }
@@ -71,7 +71,7 @@ class Env extends Map {
   setThunk(i,val) {
     this.set(i, function*() {
       // console.warn(`expensively calculating ${ i }`);
-      let result = (yield val) ?? val; // If val is not A or V, then it need not be evaluated
+      const result = (yield val) ?? val; // If val is not A or V, then it need not be evaluated
       while ( true ) yield result;
     } () );
     return this;
@@ -352,7 +352,7 @@ function evalLC(term) {
         if ( term.name==="()" )
           { console.error(`eval: evaluating undefined inside definition of "${term.defName}"`); throw new EvalError; } // depend on verbosity here
         else {
-          let res = env.getValue(term.name);
+          const res = env.getValue(term.name);
           if ( ! res.env )
             term = res;
           else {
@@ -366,7 +366,7 @@ function evalLC(term) {
         stack.push([ new Tuple(term.right, new Env(env)), true ]);
         term = term.left;
       } else if ( term instanceof L ) {
-        let [ { term: lastTerm, env: lastEnv }, isRight, isEvaluated ] = stack.pop();
+        const [ { term: lastTerm, env: lastEnv }, isRight, isEvaluated ] = stack.pop();
         if ( isEvaluated ) {
           // A non-evaluated term was received from an Env, but it is now evaluated.
           // Store it.
@@ -383,7 +383,7 @@ function evalLC(term) {
         ({term, env} = term);
       } else { // Not a term
         if ( stack.length === 0 ) return term;
-        let [ { term: lastTerm, env: lastEnv }, isRight, isEvaluated ] = stack.pop();
+        const [ { term: lastTerm, env: lastEnv }, isRight, isEvaluated ] = stack.pop();
         if ( isEvaluated ) {
           // A non-evaluated term was received from an Env, but it is now evaluated.
           // Store it.
@@ -393,7 +393,7 @@ function evalLC(term) {
           term = lastTerm;
           env = lastEnv;
         } else { // lastTerm is a JS function
-          let res = lastTerm(term);
+          const res = lastTerm(term);
           if ( res.term ) {
             ({term, env} = res);
             if ( ! env ) env = new Env;
