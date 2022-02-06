@@ -3,36 +3,80 @@
 # primes
 # according to The Real Sieve of Erathosthenes
 
-# B :: (b -> c) -> (a -> b) -> (a -> c)
-B = \ f g x . f (g x)
+#import Combinators.lc
 
-# data Int :: Zero | Succ Int
+B  = \ f g x . f (g x)
+C  = \ f x y . f y x
+I  = \ x . x
+K  = \ x _ . x
+KI = \ _ x . x
+M  = \ x . x x
+S  = \ f g x . f x (g x)
+T  = \ x f . f x
+V  = \ x y f . f x y
+W  = \ f x . f x x
+Y  = \ f . ( \ x . f (x x) ) ( \ x . f (x x) )
+Z  = \ f . ( \ x . f \ y . x x y ) ( \ x . f \ y . x x y )
 
-# succ :: Int -> Int
-succ = \ n . \ zero succ . succ n
+#import Ordering.lc
 
-# plus :: Int -> Int -> Int
-plus = \ m n . n m (B succ (plus m))
+LT = \ lt eq gt . lt
+EQ = \ lt eq gt . eq
+GT = \ lt eq gt . gt
 
-# mult :: Int -> Int -> Int
-mult = \ m n . n n (B (plus m) (mult m))
+# import Booleans.lc
 
-# minus :: Int -> Int -> Int
-minus = \ m n . m m (B (n m) minus)
+False = \ false true . false
+True = \ false true . true
 
-# data Bool :: False | True
+# data Number = End | Even Number | Odd Number
 
-# false :: Bool
-false = \ false true . false
+# zero :: Int
+zero = \ end even odd . end
 
-# true :: Bool
-true = \ false true . true
+# shiftR0,shiftR1 :: Int -> Int
+shiftR0 = \ n . \ end even odd . even n # mind that a shiftR in LE is a multiplication
+shiftR1 = \ n . \ end even odd . odd  n # mind that a shiftR in LE is a multiplication
 
 # isZero :: Int -> Bool
-isZero = \ n . n true ( \ n-1 . false )
+isZero = \ n . n True (K False) (K False)
 
-# EQ :: Int -> Int -> Bool
-EQ = \ m n . m (isZero n) (B (n false) EQ)
+# unpad :: Int -> Int
+unpad = \ n . n zero ( \ z . ( \ unpadZ . isZero unpadZ (shiftR0 unpadZ) zero ) (unpad z) ) (B shiftR1 unpad)
+
+# succ,pred :: Int -> Int
+succ = \ n . n (shiftR1 zero) shiftR1 (B shiftR0 succ)
+go = \ prefix n . n zero
+                    (go (B prefix shiftR1))
+                    ( \ z . z (prefix z) (K (prefix (shiftR0 z))) (K (prefix (shiftR0 z))) )
+pred = go I
+
+# compare :: Int -> Int -> Ordering
+compare = \ m n . m (n EQ (K LT) (K LT))
+                    ( \ zm . n GT (compare zm) ( \ zn . compare zm zn LT LT GT ) )
+                    ( \ zm . n GT ( \ zn . compare zm zn LT GT GT ) (compare zm) )
+# eq,gt :: Int -> Int -> Bool
+eq = \ m n . compare m n False True  False
+gt = \ m n . compare m n False False True
+
+# plus,mult,minus :: Int -> Int -> Int
+plus = \ m n . m n
+                 ( \ zm . n (shiftR0 zm) (B shiftR0 (plus zm)) (B shiftR1 (plus zm)) )
+                 ( \ zm . n (shiftR1 zm) (B shiftR1 (plus zm)) (B shiftR0 (B succ (plus zm))) )
+
+mult = \ m n . m m
+               ( \ zm . n n
+                          ( \ zn . shiftR0 (shiftR0 (mult zm zn)) )
+                          ( \ zn . shiftR0 (mult zm (shiftR1 zn)) )
+               )
+               ( \ zm . n n
+                          ( \ zn . shiftR0 (mult (shiftR1 zm) zn) )
+                          ( \ zn . plus (shiftR1 zn) (shiftR0 (mult zm (shiftR1 zn))) )
+               )
+unsafeMinus = \ m n . m zero
+                        ( \ zm . n (shiftR0 zm) (B shiftR0 (unsafeMinus zm)) (B shiftR1 (B pred (unsafeMinus zm))) )
+                        ( \ zm . n (shiftR1 zm) (B shiftR1 (unsafeMinus zm)) (B shiftR0 (unsafeMinus zm)) )
+minus = \ m n . gt m n zero (unpad (unsafeMinus m n)) # needs explicit unpad or will litter padding
 
 # data Pair a b :: Pair a b
 
@@ -62,12 +106,8 @@ map = \ fn xs . xs ( \ x xs . cons (fn x) (map fn xs) )
 # iterate :: (a -> a) -> a -> Stream a
 iterate = \ fn x . cons x (iterate fn (fn x))
 
-# LE :: Int -> Int -> Bool
-# LE = \ m n . isZero (minus m n)
-# LE = \ m n . m true (B (n false) LE) # probably equal performance
-
-# LE :: Stream Int -> Stream Int -> Bool
-LE = \ m n . isZero (minus (head m) (head n)) # no need to order on subsequent elements
+# le :: Stream a -> Stream a -> Bool
+le = \ m n . compare (head m) (head n) True True False
 
 # data Set a = Nil | Branch a (Set a) (Set a)
 
@@ -82,7 +122,7 @@ insert = \ x set .
              set
                (branch x empty empty)
                ( \ y left right .
-                     LE x y
+                     le x y
                        (branch y left (insert x right))
                        (branch y (insert x left) right)
                )
@@ -109,7 +149,7 @@ adjust = \ x table .
   ( \ unpair . unpair
     \ uncons table' . uncons
     \ n ns .
-        EQ n x
+        eq n x
           table
           (adjust x (insert ns table'))
   )
@@ -120,7 +160,7 @@ sieve = \ table xxs . xxs
         \ x xs .
             ( \ uncons . uncons
               \ n _ .
-                  EQ n x
+                  eq n x
                     (cons x (sieve (insertPrime xxs table) xs))
                     (sieve (adjust x table) xs)
             )
