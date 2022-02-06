@@ -1,0 +1,135 @@
+# JohanWiltink
+
+# primes
+# according to The Real Sieve of Erathosthenes
+
+# B :: (b -> c) -> (a -> b) -> (a -> c)
+B = \ f g x . f (g x)
+
+# data Int :: Zero | Succ Int
+
+# succ :: Int -> Int
+succ = \ n . \ zero succ . succ n
+
+# plus :: Int -> Int -> Int
+plus = \ m n . n m (B succ (plus m))
+
+# mult :: Int -> Int -> Int
+mult = \ m n . n n (B (plus m) (mult m))
+
+# minus :: Int -> Int -> Int
+minus = \ m n . m m (B (n m) minus)
+
+# data Bool :: False | True
+
+# false :: Bool
+false = \ false true . false
+
+# true :: Bool
+true = \ false true . true
+
+# isZero :: Int -> Bool
+isZero = \ n . n true ( \ n-1 . false )
+
+# EQ :: Int -> Int -> Bool
+EQ = \ m n . m (isZero n) (B (n false) EQ)
+
+# data Pair a b :: Pair a b
+
+# pair :: a -> b -> Pair a b
+pair = \ x y . \ pair . pair x y
+
+# fst :: Pair a b -> a
+fst = \ xy . xy ( \ x y . x )
+
+# snd :: Pair a b -> b
+snd = \ xy . xy ( \ x y . y )
+
+# data Stream a :: Cons a (Stream a)
+
+# cons :: a -> Stream a -> Stream a
+cons = \ x xs . \ cons . cons x xs
+
+# head :: Stream a -> a
+head = \ xs . xs ( \ x xs . x )
+
+# tail :: Stream a -> Stream a
+tail = \ xs . xs ( \ x xs . xs )
+
+# map :: (a -> b) -> Stream a -> Stream b
+map = \ fn xs . xs ( \ x xs . cons (fn x) (map fn xs) )
+
+# iterate :: (a -> a) -> a -> Stream a
+iterate = \ fn x . cons x (iterate fn (fn x))
+
+# LE :: Int -> Int -> Bool
+# LE = \ m n . isZero (minus m n)
+# LE = \ m n . m true (B (n false) LE) # probably equal performance
+
+# LE :: Stream Int -> Stream Int -> Bool
+LE = \ m n . isZero (minus (head m) (head n)) # no need to order on subsequent elements
+
+# data Set a = Nil | Branch a (Set a) (Set a)
+
+# empty :: Set a
+empty = \ nil branch . nil
+
+# branch :: a -> Set a -> Set a -> Set a
+branch = \ x left right . \ nil branch . branch x left right
+
+# insert :: (Ord a) => a -> Set a -> Set a
+insert = \ x set .
+             set
+               (branch x empty empty)
+               ( \ y left right .
+                     LE x y
+                       (branch y left (insert x right))
+                       (branch y (insert x left) right)
+               )
+
+# findMin :: (Partial) => Set a -> a
+findMin = \ set . set ()
+          \ x left right .
+              left x ( \ _ _ _ . findMin left )
+
+# minView :: (Partial) => Set a -> (a,Set a)
+minView = \ set . set ()
+          \ x left right .
+              left
+                (pair x right)
+                ( \ _ _ _ . ( \ unpair . unpair \ y left' . pair y (branch x left' right) ) (minView left) )
+
+# insertPrime :: Stream Int -> Set (Stream Int) -> Set (Stream Int)
+insertPrime = \ candidates . candidates
+              \ prime _ .
+                  insert (map (mult prime) candidates)
+
+# adjust :: Int -> Set (Stream Int) -> Set (Stream Int)
+adjust = \ x table .
+  ( \ unpair . unpair
+    \ uncons table' . uncons
+    \ n ns .
+        EQ n x
+          table
+          (adjust x (insert ns table'))
+  )
+  (minView table)
+
+# sieve :: Set (Stream Int) -> Stream Int -> Stream Int
+sieve = \ table xxs . xxs
+        \ x xs .
+            ( \ uncons . uncons
+              \ n _ .
+                  EQ n x
+                    (cons x (sieve (insertPrime xxs table) xs))
+                    (sieve (adjust x table) xs)
+            )
+            (findMin table)
+
+# firstSieve :: Stream Int -> Stream Int
+firstSieve = \ xxs . xxs
+             \ x xs .
+                cons x (sieve (insertPrime xxs empty) xs)
+
+# primes :: Stream Int
+primes = cons 2 (firstSieve (iterate (plus 2) 3))
