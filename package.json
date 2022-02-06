@@ -8,7 +8,8 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "mocha --reporter spec ./tests/run-tests.js"
+    "test": "mocha --reporter spec ./tests/run-tests.js",
+    "repl": "node ./src/LC-REPL.js"
   },
   "repository": {
     "type": "git",
@@ -26,6 +27,7 @@
   "homepage": "https://github.com/Kacarott/LC-Codewars#readme",
   "dependencies": {
     "chai": "^4.3.4",
-    "mocha": "^9.1.4"
+    "mocha": "^9.1.4",
+    "repl": "^0.1.3"
   }
 }
