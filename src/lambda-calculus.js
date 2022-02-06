@@ -300,8 +300,7 @@ function parseWith(cfg={}) {
       const [i,r] = defn(0);
       if ( i===code.length ) {
         const [name,term] = r;
-        const wrapped = wrap(name,term);
-        return env.setThunk( name, wrapped);
+        return env.setThunk( name, wrap(name,term));
       } else
         error(i,"defn: incomplete parse");
     }
