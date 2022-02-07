@@ -328,16 +328,14 @@ function compileWith(cfg={}) {
 // Top level call, term :: Tuple
 function evalLC(term) {
 
-  // builds function to return to user (representing an abstraction awaiting input)
+  // builds function to return to user ( representing an abstraction awaiting input )
   function awaitArg(term, stack, env) {
-
-    // callback function which will apply the input to the term
+    // callback function which will evaluate term.body in an env with the input
     function result(arg) {
       let argEnv;
-      if ( arg.term && arg.env ) ({ term: arg, env: argEnv } = arg); // If callback is passed another callback, or a term
+      if ( arg.term && arg.env ) ({ term: arg, env: argEnv } = arg); // if callback is passed another callback, or a term
       const termVal = new Tuple( typeof arg !== 'number' ? arg : fromInt(arg) , new Env(argEnv) );
-      const newEnv = new Env(env).setThunk(term.name, termVal);
-      return runEval(new Tuple(term.body, newEnv), stack);
+      return runEval( new Tuple(term.body, new Env(env).setThunk(term.name, termVal)), stack );
     }
     return Object.assign( result, {term,env} );
   }
