@@ -345,12 +345,15 @@ function evalLC(term) {
   // term :: Tuple
   // isRight :: bool (indicating whether the term is left or right side of an Application)
   // isEvaluated :: bool (indicating whether the current term should be stored in the Env)
+  // callstack :: [String] (History of var lookups, for better error messages)
   function runEval({term,env},stack) { // stack: [[term, isRight, isEvaluated]], term: LC term, env = Env { name => term }
+    const callstack = []; // Does not persist between requests for arguments
     while ( ! ( term instanceof L ) || stack.length > 0 ) {
       if ( term instanceof V )
         if ( term.name==="()" )
-          { console.error(`eval: evaluating undefined inside definition of "${term.defName}"`); throw new EvalError; } // depend on verbosity here
+          { printStackTrace("eval: evaluating undefined", term, callstack); throw new EvalError; }
         else {
+          callstack.push(term.name);
           const res = env.getValue(term.name);
           if ( ! res.env )
             term = res;
@@ -405,6 +408,32 @@ function evalLC(term) {
     return awaitArg(term, stack, env);
   }
   return runEval(term, []);
+}
+
+// Print an error, with stack trace according to verbosity level
+function printStackTrace(error, term, stack) {
+  if (config.verbosity == "Calm") return; // No error message for Calm
+  else if (config.verbosity == "Concise")
+    console.error(`${error} inside definition of <code>${term.defName}</code>`);
+  else if (config.verbosity == "Loquacious") {
+    // Loquacious will provide a stack trace localised to the definition
+    if (stack.length == 0 || stack[stack.length-1] == term.defName)
+      console.error(`${error} inside definition of <code>${term.defName}</code>`);
+    else {
+      const localStack = stack.slice(stack.indexOf(term.defName)+1).reverse();
+      console.error(`${error} inside definition of <code>${term.defName}</code>
+${localStack.map(v=>'\twhile evaluating <code>' + v + '</code>').join('\n')}`)
+    }
+  } else if (config.verbosity == "Verbose") {
+    // Verbose will provide a full stack trace
+    if (stack.length == 0)
+      console.error(`${error} inside definition of <code>${term.defName}</code>`);
+    else {
+      const localStack = stack.reverse();
+      console.error(`${error} inside definition of <code>${term.defName}</code>
+${localStack.map(v=>'\twhile evaluating <code>' + v + '</code>').join('\n')}`)
+    }
+  }
 }
 
 Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { return toInt(this); } } );
