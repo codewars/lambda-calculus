@@ -95,7 +95,7 @@ class Tuple {
 function Primitive(v) { return new Tuple(new V( "<primitive>" ), new Env([[ "<primitive>" , function*() { while ( true ) yield v; } () ]])); }
 
 const primitives = new Env;
-primitives.setThunk( "trace", new Tuple( Primitive( function(v) { console.log(String(v.term)); return v; } ), new Env ) );
+primitives.setThunk( "trace", new Tuple( Primitive( function(v) { console.info(String(v.term)); return v; } ), new Env ) );
 
 const Y = new L("f",new A(new L("x",new A(new V("f"),new A(new V("x"),new V("x")))),new L("x",new A(new V("f"),new A(new V("x"),new V("x"))))));
 
@@ -176,6 +176,7 @@ function parseWith(cfg={}) {
         if ( purity === "Let" )
           return Array.from(FV).reduce( (tm,nm) => {
             if ( env.has(nm) ) {
+              if ( config.verbosity >= "Verbose" ) console.debug(`   using ${ nm } = ${ env.getValue(nm) }`);
               tm.env.set( nm, env.get(nm) );
               return tm;
             } else {
@@ -185,16 +186,17 @@ function parseWith(cfg={}) {
           } , new Tuple( term, new Env ) );
         else if ( purity==="LetRec" )
           return Array.from(FV).reduce( (tm,nm) => {
-              if ( nm === name )
-                return tm;
-              else if ( env.has(nm) ) {
-                tm.env.set( nm, env.get(nm) );
-                return tm;
-              } else {
-                if ( verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
-                throw new ReferenceError(`undefined free variable ${ nm }`);
-              }
-            } , new Tuple( FV.has(name) ? new A(Y,new L(name,term)) : term , new Env ) );
+            if ( nm === name )
+              return tm;
+            else if ( env.has(nm) ) {
+              if ( config.verbosity >= "Verbose" ) console.debug(`   using ${ nm } = ${ env.getValue(nm) }`);
+              tm.env.set( nm, env.get(nm) );
+              return tm;
+            } else {
+              if ( verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
+              throw new ReferenceError(`undefined free variable ${ nm }`);
+            }
+          } , new Tuple( FV.has(name) ? new A(Y,new L(name,term)) : term , new Env ) );
         else if ( purity==="PureLC" )
           if ( FV.size ) {
             if ( verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
@@ -300,6 +302,8 @@ function parseWith(cfg={}) {
       const [i,r] = defn(0);
       if ( i===code.length ) {
         const [name,term] = r;
+        if ( config.verbosity >= "Loquacious" )
+          console.debug(`compiled ${ name }${ config.verbosity >= "Verbose" ? ` = ${ term }` : "" }`);
         return env.setThunk( name, wrap(name,term));
       } else
         error(i,"defn: incomplete parse");
@@ -328,16 +332,14 @@ function compileWith(cfg={}) {
 // Top level call, term :: Tuple
 function evalLC(term) {
 
-  // builds function to return to user (representing an abstraction awaiting input)
+  // builds function to return to user ( representing an abstraction awaiting input )
   function awaitArg(term, stack, env) {
-
-    // callback function which will apply the input to the term
+    // callback function which will evaluate term.body in an env with the input
     function result(arg) {
       let argEnv;
-      if ( arg.term && arg.env ) ({ term: arg, env: argEnv } = arg); // If callback is passed another callback, or a term
+      if ( arg.term && arg.env ) ({ term: arg, env: argEnv } = arg); // if callback is passed another callback, or a term
       const termVal = new Tuple( typeof arg !== 'number' ? arg : fromInt(arg) , new Env(argEnv) );
-      const newEnv = new Env(env).setThunk(term.name, termVal);
-      return runEval(new Tuple(term.body, newEnv), stack);
+      return runEval( new Tuple(term.body, new Env(env).setThunk(term.name, termVal)), stack );
     }
     return Object.assign( result, {term,env} );
   }
@@ -411,29 +413,17 @@ function evalLC(term) {
 }
 
 // Print an error, with stack trace according to verbosity level
-function printStackTrace(error, term, stack) {
-  if (config.verbosity == "Calm") return; // No error message for Calm
-  else if (config.verbosity == "Concise")
-    console.error(`${error} inside definition of <code>${term.defName}</code>`);
-  else if (config.verbosity == "Loquacious") {
-    // Loquacious will provide a stack trace localised to the definition
-    if (stack.length == 0 || stack[stack.length-1] == term.defName)
-      console.error(`${error} inside definition of <code>${term.defName}</code>`);
-    else {
-      const localStack = stack.slice(stack.indexOf(term.defName)+1).reverse();
-      console.error(`${error} inside definition of <code>${term.defName}</code>
-${localStack.map(v=>'\twhile evaluating <code>' + v + '</code>').join('\n')}`)
-    }
-  } else if (config.verbosity == "Verbose") {
-    // Verbose will provide a full stack trace
-    if (stack.length == 0)
-      console.error(`${error} inside definition of <code>${term.defName}</code>`);
-    else {
-      const localStack = stack.reverse();
-      console.error(`${error} inside definition of <code>${term.defName}</code>
-${localStack.map(v=>'\twhile evaluating <code>' + v + '</code>').join('\n')}`)
-    }
-  }
+function printStackTrace(error, term, stack) { console.log("printStackTrace",config.verbosity)
+  if ( config.verbosity >= "Concise" )
+    console.error(`${ error } inside definition of <code>${ term.defName }</code>`);
+
+  const stackCutoff = config.verbosity < "Verbose" && stack[stack.length-1] == term.defName ? stack.indexOf(term.defName) + 1 : 0 ;
+
+  if ( config.verbosity >= "Loquacious" )
+    console.error( stack.slice(stackCutoff).reverse().map( v => `\twhile evaluating <code>${ v }</code>`).join('\n') );
+
+  if ( config.verbosity >= "Verbose" )
+    console.error( stack.slice().reverse().map( v => `\twhile evaluating <code>${ v }</code>`).join('\n') );
 }
 
 Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { return toInt(this); } } );

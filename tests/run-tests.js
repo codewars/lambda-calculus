@@ -10,6 +10,8 @@ const examples = [ "basics-binary-scott"
                  , "is-prime"
                  , "is-prime-scott"
                  , "prime-sieve"
+                 , "scott-lists"
+                 , "multiply"
                  ];
 
 try {
