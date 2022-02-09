@@ -3,7 +3,7 @@ const {assert} = require("chai");
 const LC = require("../../src/lambda-calculus.js");
 LC.config.purity = "LetRec";
 LC.config.numEncoding = "Church";
-LC.config.verbosity = "Concise";
+// LC.config.verbosity = "Concise"; // reinstate for production
 
 const {multiply} = LC.compile();
 

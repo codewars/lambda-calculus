@@ -3,7 +3,6 @@
 B = \ f g x . f (g x)
 I = \ x . x
 K = \ x _ . x
-Y = \ f . ( \ x . f (x x) ) ( \ x . f (x x) )
 True = \ t f . t
 False = \ t f . f
 Succ = \ n z s . s n

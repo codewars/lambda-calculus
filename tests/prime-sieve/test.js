@@ -5,7 +5,6 @@ const {assert} = chai;
 const LC = require("../../src/lambda-calculus.js");
 LC.config.purity = "LetRec";
 LC.config.numEncoding = "BinaryScott";
-LC.config.verbosity = "Concise";
 
 const {primes} = LC.compile();
 const toInt = LC.toIntWith(LC.config);

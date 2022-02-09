@@ -4,7 +4,6 @@ const {assert} = chai;
 const LC = require("../../src/lambda-calculus.js");
 LC.config.purity = "LetRec";
 LC.config.numEncoding = "BinaryScott";
-LC.config.verbosity = "Concise";
 
 const solution = LC.compile();
 const fromInt = LC.fromIntWith(LC.config);

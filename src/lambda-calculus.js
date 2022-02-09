@@ -95,9 +95,8 @@ class Tuple {
 function Primitive(v) { return new Tuple(new V( "<primitive>" ), new Env([[ "<primitive>" , function*() { while ( true ) yield v; } () ]])); }
 
 const primitives = new Env;
-primitives.setThunk( "trace", new Tuple( Primitive( function(v) { console.log(String(v.term)); return v; } ), new Env ) );
-
-const Y = new L("f",new A(new L("x",new A(new V("f"),new A(new V("x"),new V("x")))),new L("x",new A(new V("f"),new A(new V("x"),new V("x"))))));
+primitives.setThunk( "trace", new Tuple( Primitive( function(v) { console.info(String(v.term)); return v; } ), new Env ) );
+primitives.setThunk( "Y", new Tuple( new L("f",new A(new L("x",new A(new V("f"),new A(new V("x"),new V("x")))),new L("x",new A(new V("f"),new A(new V("x"),new V("x")))))), new Env ) );
 
 function fromInt(n) { return fromIntWith()(n); }
 
@@ -176,6 +175,7 @@ function parseWith(cfg={}) {
         if ( purity === "Let" )
           return Array.from(FV).reduce( (tm,nm) => {
             if ( env.has(nm) ) {
+              if ( config.verbosity >= "Verbose" ) console.debug(`   using ${ nm } = ${ env.getValue(nm) }`);
               tm.env.set( nm, env.get(nm) );
               return tm;
             } else {
@@ -185,16 +185,17 @@ function parseWith(cfg={}) {
           } , new Tuple( term, new Env ) );
         else if ( purity==="LetRec" )
           return Array.from(FV).reduce( (tm,nm) => {
-              if ( nm === name )
-                return tm;
-              else if ( env.has(nm) ) {
-                tm.env.set( nm, env.get(nm) );
-                return tm;
-              } else {
-                if ( verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
-                throw new ReferenceError(`undefined free variable ${ nm }`);
-              }
-            } , new Tuple( FV.has(name) ? new A(Y,new L(name,term)) : term , new Env ) );
+            if ( nm === name )
+              return tm;
+            else if ( env.has(nm) ) {
+              if ( config.verbosity >= "Verbose" ) console.debug(`   using ${ nm } = ${ env.getValue(nm) }`);
+              tm.env.set( nm, env.get(nm) );
+              return tm;
+            } else {
+              if ( verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
+              throw new ReferenceError(`undefined free variable ${ nm }`);
+            }
+          } , new Tuple( FV.has(name) ? new A(env.getValue("Y"),new L(name,term)) : term , new Env ) );
         else if ( purity==="PureLC" )
           if ( FV.size ) {
             if ( verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
@@ -300,6 +301,10 @@ function parseWith(cfg={}) {
       const [i,r] = defn(0);
       if ( i===code.length ) {
         const [name,term] = r;
+        if ( name == "Y" )
+          console.warn("<span style=\"color:orange\">redefining Y is NOT RECOMMENDED and you do so at your peril</span>");
+        if ( config.verbosity >= "Loquacious" )
+          console.debug(`compiled ${ name }${ config.verbosity >= "Verbose" ? ` = ${ term }` : "" }`);
         return env.setThunk( name, wrap(name,term));
       } else
         error(i,"defn: incomplete parse");

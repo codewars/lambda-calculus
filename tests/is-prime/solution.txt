@@ -1,6 +1,5 @@
 # JohanWiltink
 
-Y = \ f . ( \ x . f (x x) ) ( \ x . f (x x) )
 True = \ t f . t
 False = \ t f . f
 Succ = \ n s z . s (n s z)

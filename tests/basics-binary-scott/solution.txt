@@ -12,7 +12,6 @@ S  = \ f g x . f x (g x)
 T  = \ x f . f x
 V  = \ x y f . f x y
 W  = \ f x . f x x
-Y  = \ f . ( \ x . f (x x) ) ( \ x . f (x x) )
 Z  = \ f . ( \ x . f \ y . x x y ) ( \ x . f \ y . x x y )
 
 #import Boolean.lc
