@@ -33,6 +33,12 @@ sub = \ m n . m m (B (n m) sub)
 mul = \ m n . m m (B (add n) (mul n))
 is-zero = \ n . n True (K False)
 one = succ zero
+compare = \ m n . m (n EQ LT) (B (n GT) compare)
+lt = \ m n . compare m n True  False False
+le = \ m n . compare m n True  True  False
+eq = \ m n . compare m n False True  False
+ge = \ m n . compare m n False True  True
+gt = \ m n . compare m n False False True
 #import scott-pair.lc
 Pair = V
 fst = T K
@@ -41,7 +47,7 @@ first  = \ fn xy  . xy \ x   . Pair (fn x)
 second = \ fn xy  . xy \ x y . Pair x (fn y)
 both   = \ fn xy  . xy \ x y . Pair (fn x) (fn y)
 bimap  = \ f g xy . xy \ x y . Pair (f x) (g y)
-curry fn x y = fn (Pair x y)
+curry  = \ fn x y . fn (Pair x y)
 uncurry = T
 #import scott-option.lc
 None = K                           # = zero
@@ -51,10 +57,7 @@ is-none = \ x . x True (K False)   # = is-zero
 is-some = \ x . x False (K True)
 from-option = \ z x . x z I
 from-some = \ x . x () I
-list-to-option = \ xs . xs None \ x _xs . Some x
-option-to-list = \ x . x nil singleton
-map-option = \ fn xs . xs nil \ x xs . fn x (map-options fn xs) (C cons (map-options fn xs))
-cat-options = map-options I
+# additional definitions depend on nil and cons
 
 # data List a = Nil | Cons a (List a)
 
@@ -66,6 +69,14 @@ cons = \ x xs . \ _nil cons . cons x xs
 
 # singleton :: a -> List a
 singleton = \ x . cons x nil
+
+# these scott-options definitions depend on nil, cons, singleton
+list-to-option = \ xs . xs None \ x _xs . Some x
+option-to-list = \ x . x nil singleton
+map-option = \ fn xs . xs nil \ x xs . fn x (map-option fn xs) (C cons (map-option fn xs))
+cat-options = map-option I
+
+# continuing scott-lists.lc
 
 # foldr :: (a -> z -> z) -> z -> List a -> z
 foldr = \ fn z xs . xs z ( \ x xs . fn x (foldr fn z xs) )
@@ -144,11 +155,11 @@ all = \ p . foldr (B and p) True
 # find :: (a -> Boolean) -> List a -> Option a
 find = \ p . foldr ( \ x z . p x z (Some x) ) None
 
-# find-index :: (a -> Boolean) -> List a -> Option Number
-find-index p = B list-to-option (find-indices p)
-
 # find-indices :: (a -> Boolean) -> List a -> List Number
-find-indices p = foldr ( \ x k i . p x I (cons i) (k (succ i)) ) (K nil) zero
+find-indices = \ p . foldr ( \ x k i . p x I (cons i) (k (succ i)) ) (K nil) zero
+
+# find-index :: (a -> Boolean) -> List a -> Option Number
+find-index = \ p . B list-to-option (find-indices p)
 
 # partition :: (a -> Boolean) -> List a -> Pair (List a) (List a)
 partition = \ p . foldr ( \ x . p x second first (cons x) ) (Pair nil nil)
@@ -180,12 +191,6 @@ scanr = \ fn z xs . xs (singleton z) \ x xs . ( \ zs . zs \ z _zs . cons (fn x z
 # reverse :: List a -> List a
 reverse = foldl (C cons) nil
 
-# init :: List a -> List a
-init = \ xs . xs () (S (zip-with K) tail xs)
-
-# last :: List a -> a
-last = foldl KI ()
-
 # unzip :: List (Pair a b) -> Pair (List a) (List b)
 unzip = foldr ( \ xy xys . xy \ x y . bimap (cons x) (cons y) xys ) (Pair nil nil)
 unzip = foldr (CB \ x y . bimap (cons x) (cons y)) (Pair nil nil)
@@ -195,6 +200,12 @@ zip-with = \ fn xs ys . xs nil \ x xs . ys nil \ y ys . cons (fn x y) (zip-with 
 
 # zip :: List a -> List b -> List (Pair a b)
 zip = zip-with Pair
+
+# init :: List a -> List a
+init = \ xs . xs () (S (zip-with K) tail xs)
+
+# last :: List a -> a
+last = foldl KI ()
 
 # slice :: Number -> Number -> List a -> List a
 slice = \ i j xs . gt j i nil (take (sub j i) (drop i xs))
