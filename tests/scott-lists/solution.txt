@@ -14,6 +14,7 @@ S = \ f g x . f x (g x)
 T = \ x fn . fn x
 V = \ x y fn . fn x y
 W = \ f x . f x x
+Y = \ f . ( \ x . f (x x) ) ( \ x . f (x x) )
 #import scott-booleans.ls
 False = K
 True  = KI
