@@ -409,29 +409,17 @@ function evalLC(term) {
 }
 
 // Print an error, with stack trace according to verbosity level
-function printStackTrace(error, term, stack) {
-  if (config.verbosity == "Calm") return; // No error message for Calm
-  else if (config.verbosity == "Concise")
-    console.error(`${error} inside definition of <code>${term.defName}</code>`);
-  else if (config.verbosity == "Loquacious") {
-    // Loquacious will provide a stack trace localised to the definition
-    if (stack.length == 0 || stack[stack.length-1] == term.defName)
-      console.error(`${error} inside definition of <code>${term.defName}</code>`);
-    else {
-      const localStack = stack.slice(stack.indexOf(term.defName)+1).reverse();
-      console.error(`${error} inside definition of <code>${term.defName}</code>
-${localStack.map(v=>'\twhile evaluating <code>' + v + '</code>').join('\n')}`)
-    }
-  } else if (config.verbosity == "Verbose") {
-    // Verbose will provide a full stack trace
-    if (stack.length == 0)
-      console.error(`${error} inside definition of <code>${term.defName}</code>`);
-    else {
-      const localStack = stack.reverse();
-      console.error(`${error} inside definition of <code>${term.defName}</code>
-${localStack.map(v=>'\twhile evaluating <code>' + v + '</code>').join('\n')}`)
-    }
-  }
+function printStackTrace(error, term, stack) { console.log("printStackTrace",config.verbosity)
+  if ( config.verbosity >= "Concise" )
+    console.error(`${ error } inside definition of <code>${ term.defName }</code>`);
+
+  const stackCutoff = config.verbosity < "Verbose" && stack[stack.length-1] == term.defName ? stack.indexOf(term.defName) + 1 : 0 ;
+
+  if ( config.verbosity >= "Loquacious" )
+    console.error( stack.slice(stackCutoff).reverse().map( v => `\twhile evaluating <code>${ v }</code>`).join('\n') );
+
+  if ( config.verbosity >= "Verbose" )
+    console.error( stack.slice().reverse().map( v => `\twhile evaluating <code>${ v }</code>`).join('\n') );
 }
 
 Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { return toInt(this); } } );
