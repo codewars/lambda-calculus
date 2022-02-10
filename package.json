@@ -1,5 +1,5 @@
 {
-  "name": "lc-codewars",
+  "name": "@codewars/lambda-calculus",
   "version": "1.0.0",
   "description": "Lambda Calculus evaluator for Codewars",
   "main": "src/lambda-calculus.js",
