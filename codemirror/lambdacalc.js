@@ -28,7 +28,7 @@ CodeMirror.defineMode("lambdacalc", function(_config, modeConfig) {
   const NUMBER = "number";
   const EMPTY = "text";
   const UNDEF = "error";
-  const REDEF = "error";
+  const REDEF = "variable-3";
   const FAIL = "error";
 
   const defName = /[a-zA-Z][a-zA-Z0-9_\-']*/
