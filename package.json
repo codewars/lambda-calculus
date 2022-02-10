@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/codewars/LC-Codewars.git"
+    "url": "git+https://github.com/codewars/lambda-calculus.git"
   },
   "keywords": [
     "lc",
@@ -22,9 +22,9 @@
   "author": "Kacarott",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/codewars/LC-Codewars/issues"
+    "url": "https://github.com/codewars/lambda-calculus/issues"
   },
-  "homepage": "https://github.com/codewars/LC-Codewars#readme",
+  "homepage": "https://github.com/codewars/lambda-calculus#readme",
   "devDependencies": {
     "chai": "^4.3.4",
     "mocha": "^9.1.4"
