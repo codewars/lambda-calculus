@@ -27,7 +27,6 @@
   "homepage": "https://github.com/codewars/LC-Codewars#readme",
   "dependencies": {
     "chai": "^4.3.4",
-    "mocha": "^9.1.4",
-    "repl": "^0.1.3"
+    "mocha": "^9.1.4"
   }
 }
