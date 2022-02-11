@@ -1,11 +1,12 @@
-const chai = require("chai");
-const {assert} = chai;
+import {readFileSync} from "fs";
+import {assert} from "chai";
 
-const LC = require("../../src/lambda-calculus.js");
+import * as LC from "../../src/lambda-calculus.js";
 LC.config.purity = "LetRec";
 LC.config.numEncoding = "Church";
 
-const solution = LC.compile();
+const solutionText = readFileSync(new URL("./solution.txt", import.meta.url), {encoding: "utf8"});
+const solution = LC.compile(solutionText);
 const fromInt = LC.fromIntWith(LC.config);
 const toInt = LC.toIntWith(LC.config);
 

@@ -1,10 +1,12 @@
-const {assert} = require("chai");
+import {readFileSync} from "fs";
+import {assert} from "chai";
 
-const LC = require("../../src/lambda-calculus.js");
+import * as LC from "../../src/lambda-calculus.js";
 LC.config.purity = "LetRec";
 LC.config.numEncoding = "Scott";
 
-const {delta} = LC.compile();
+const solutionText = readFileSync(new URL("./solution.txt", import.meta.url), {encoding: "utf8"});
+const {delta} = LC.compile(solutionText);
 
 const {fin} = LC.compile(String.raw`
 nil = \ _ _ x . x
@@ -33,7 +35,9 @@ function toArr(a, n) { // lists use double pair encoding, not Scott!
   return res;
 }
 
-it("fixed tests", function() {
-  assert.deepEqual( toArr( delta (fromInt(2)) (fin), 2 ), [1, 1] );
-  assert.deepEqual( toArr( delta (fromInt(1)) (inf), 10 ), [1,1,1,1,1,1,1,1,1,1] );
+describe("delta-generators", () => {
+  it("fixed tests", function() {
+    assert.deepEqual( toArr( delta (fromInt(2)) (fin), 2 ), [1, 1] );
+    assert.deepEqual( toArr( delta (fromInt(1)) (inf), 10 ), [1,1,1,1,1,1,1,1,1,1] );
+  });
 });

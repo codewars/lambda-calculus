@@ -1,5 +1,6 @@
 {
   "name": "@codewars/lambda-calculus",
+  "type": "module",
   "version": "1.0.0",
   "description": "Lambda Calculus evaluator for Codewars",
   "main": "src/lambda-calculus.js",
@@ -8,7 +9,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "mocha --reporter spec ./tests/run-tests.js",
+    "test": "mocha --reporter spec ./tests/*/test.js",
     "repl": "node ./src/LC-REPL.js"
   },
   "repository": {

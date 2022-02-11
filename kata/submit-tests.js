@@ -1,15 +1,15 @@
-const LC = require("lambda-calculus.js");
-const assert = require("assert");
-const chai = require("chai");
-chai.config.truncateThreshold = 0;
+import {readFileSync} from "fs";
+import {assert, config as chaiConfig} from "chai";
+chaiConfig.truncateThreshold = 0;
 
 // Uses LC-Codewars for compilation
-// https://github.com/Kacarott/LC-Codewars
-
+// https://github.com/codewars/lambda-calculus
+import * as LC from "@codewars/lambda-calculus";
 LC.config.purity = "Let";
 LC.config.numEncoding = "Church";
 
-const solution = compile().example;
+const solutionText = readFileSync(new URL("./solution.txt", import.meta.url), {encoding: "utf8"});
+const solution = LC.compile(solutionText).example;
 
 describe("Sample tests", function() {
   it("should return True", function() {
