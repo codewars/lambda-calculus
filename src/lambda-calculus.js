@@ -15,7 +15,7 @@ Kacarott - https://github.com/Kacarott
 */
 
 // Default options
-const config = { verbosity: "Calm"      //  Calm | Concise | Loquacious | Verbose
+export const config = { verbosity: "Calm"      //  Calm | Concise | Loquacious | Verbose
                , purity: "Let"          //  Let | LetRec | PureLC
                , numEncoding: "Church"  //  None | Church | Scott | BinaryScott
                };
@@ -97,9 +97,9 @@ primitives.setThunk( "trace", new Tuple( Primitive( function(v) { console.info(S
 
 const Y = new L("f",new A(new L("x",new A(new V("f"),new A(new V("x"),new V("x")))),new L("x",new A(new V("f"),new A(new V("x"),new V("x"))))));
 
-function fromInt(n) { return fromIntWith()(n); }
+export function fromInt(n) { return fromIntWith()(n); }
 
-function fromIntWith(cfg={}) {
+export function fromIntWith(cfg={}) {
   const {numEncoding,verbosity} = Object.assign( {}, config, cfg );
   return function fromInt(n) {
     if ( numEncoding === "Church" )
@@ -132,9 +132,9 @@ function fromIntWith(cfg={}) {
   } ;
 }
 
-function toInt(term) { return toIntWith()(term); }
+export function toInt(term) { return toIntWith()(term); }
 
-function toIntWith(cfg={}) {
+export function toIntWith(cfg={}) {
   const {numEncoding,verbosity} = Object.assign( {}, config, cfg );
   return function toInt(term) {
     try {
@@ -314,9 +314,9 @@ function parseWith(cfg={}) {
   }
 }
 
-function compile(code) { return compileWith()(code); }
+export function compile(code) { return compileWith()(code); }
 
-function compileWith(cfg={}) {
+export function compileWith(cfg={}) {
   const {numEncoding,purity,verbosity} = Object.assign( {}, config, cfg );
   return function compile(code) {
     if (typeof code !== "string" || !code) throw new TypeError("missing code");
@@ -426,13 +426,3 @@ function printStackTrace(error, term, stack) { console.log("printStackTrace",con
 }
 
 Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { return toInt(this); } } );
-
-export {
-  config,
-  compile,
-  compileWith,
-  fromInt,
-  fromIntWith,
-  toInt,
-  toIntWith,
-};
