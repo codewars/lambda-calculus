@@ -14,8 +14,6 @@ JohanWiltink - https://github.com/JohanWiltink
 Kacarott - https://github.com/Kacarott
 */
 
-const fs = require("fs");
-
 // Default options
 const config = { verbosity: "Calm"      //  Calm | Concise | Loquacious | Verbose
                , purity: "Let"          //  Let | LetRec | PureLC
@@ -320,7 +318,8 @@ function compile(code) { return compileWith()(code); }
 
 function compileWith(cfg={}) {
   const {numEncoding,purity,verbosity} = Object.assign( {}, config, cfg );
-  return function compile(code=fs.readFileSync("./solution.txt", "utf8")) {
+  return function compile(code) {
+    if (typeof code !== "string" || !code) throw new TypeError("missing code");
     const env = parseWith({numEncoding,purity,verbosity})(code);
     const r = {};
     for ( const [name] of env )
@@ -428,10 +427,12 @@ function printStackTrace(error, term, stack) { console.log("printStackTrace",con
 
 Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { return toInt(this); } } );
 
-exports.config = config;
-exports.compile = compile;
-exports.compileWith = compileWith;
-exports.fromInt = fromInt;
-exports.fromIntWith = fromIntWith;
-exports.toInt = toInt;
-exports.toIntWith = toIntWith;
+export {
+  config,
+  compile,
+  compileWith,
+  fromInt,
+  fromIntWith,
+  toInt,
+  toIntWith,
+};

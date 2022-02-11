@@ -5,8 +5,8 @@ Simple custom REPL for testing LC code.
 Written by Kacarott
 */
 
-const repl = require("repl");
-const LC = require("./lambda-calculus.js");
+import repl from "repl";
+import * as LC from "./lambda-calculus.js";
 
 // REPL defaults
 LC.config.purity = "LetRec";
