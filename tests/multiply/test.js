@@ -6,27 +6,25 @@ chaiConfig.truncateThreshold = 0;
 import * as LC from "../../src/lambda-calculus.js";
 LC.config.purity = "LetRec";
 LC.config.numEncoding = "Church";
-// LC.config.verbosity = "Concise"; // reinstate for production
+LC.config.verbosity = "Concise";
 
 const solutionText = readFileSync(new URL("./solution.txt", import.meta.url), {encoding: "utf8"});
+const {multiply} = LC.compile(solutionText);
+const fromInt = LC.fromIntWith(LC.config);
+const toInt = LC.toIntWith(LC.config);
 
-describe("Multiply",function(){
-  // REVIEW Is this intentional? If so, it should be tested that `compile` throws
-  // and remove other test cases.
-  try {
-    const {multiply} = LC.compile(solutionText);
-    it("example tests",()=>{
-      assert.equal( multiply(7)(7), 49 );
-      assert.equal( multiply(11)(11), 121 );
+describe("Multiply",()=>{
+
+    it("example tests",function(){
+      assert.equal( toInt(multiply(fromInt(7))(fromInt(7))), 49 );
+      assert.equal( toInt(multiply(fromInt(11))(fromInt(11))), 121 );
     });
-    it("random tests",()=>{
+
+    it("random tests",function(){
       const rnd = (m,n=0) => Math.random() * (n-m) + m | 0 ;
       for ( let i=1; i<=100; i++ ) {
         const m = rnd(i), n = rnd(i);
-        assert.equal( multiply(m)(n), m*n );
+        assert.equal( toInt(multiply(fromInt(m))(fromInt(n))), m*n );
       }
     });
-  } catch (e) {
-    console.error(e);
-  }
 });
