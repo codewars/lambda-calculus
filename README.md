@@ -1,4 +1,7 @@
-# LC Compiler and test support for Codewars
+# LC Compiler for Codewars
+
+![logo-black](./logo/logo-black.svg#gh-light-mode-only)
+![logo-white](./logo/logo-white.svg#gh-dark-mode-only)
 
 Written by [Kacarott](https://github.com/Kacarott) and [JohanWiltink](https://github.com/JohanWiltink)
 

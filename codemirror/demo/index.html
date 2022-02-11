@@ -4,11 +4,10 @@
 <meta charset="utf-8"/>
 <link rel=stylesheet href="src/docs.css">
 
-<link rel="stylesheet" href="src/codemirror.css">
-<link rel="stylesheet" href="src/3024-night.css">
-<script src="src/codemirror.js"></script>
-<script src="src/matchbrackets.js"></script>
-<script src="../lambdacalc.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.1/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.1/theme/3024-night.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro">
+
 <style>.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
 <div id=nav>
   <a href="https://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png" alt=""></a>
@@ -78,6 +77,9 @@ all = foldr (\ a b . a b false) true
 allf = \ f xs . all (map f xs)
 </textarea></form>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.1/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.1/addon/edit/matchbrackets.min.js"></script>
+<script src="../lambdacalc.js"></script>
     <script>
       var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
         lineNumbers: true,
