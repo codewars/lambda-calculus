@@ -9,32 +9,51 @@ LC.config.verbosity = "Concise";
 
 const solutionText = readFileSync(new URL("./solution.txt", import.meta.url), {encoding: "utf8"});
 const solution = LC.compile(solutionText);
-const fromInt = LC.fromIntWith(LC.config);
-const toInt = LC.toIntWith(LC.config);
 
 const {nil,cons,singleton} = solution;
-const {foldr,head,tail,take} = solution;
-const {iterate,repeat,cycle,replicate} = solution;
-const {foldl,reverse} = solution;
+const {foldr,foldl,scanr,scanl} = solution;
+const {take,drop} = solution;
+const {append,concat,snoc,uncons} = solution;
+const {iterate,repeat,cycle,replicate,unfold} = solution;
+const {head,tail,"null":isNil,length,sum,product} = solution;
+const {map,"concat-map":concatMap,filter} = solution;
+const {"take-while":takeWhile,"drop-while":dropWhile,"drop-while-end":dropWhileEnd} = solution;
+const {"split-at":splitAt,get,set} = solution;
+const {any,all,find,"find-indices":findIndices,"find-index":findIndex} = solution;
+const {partition,span,"minimum-by":minimumBy,"maximum-by":maximumBy} = solution;
+const {"insret-by":insertBy,"sort-by":sortBy,reverse} = solution;
+const {"zip-with":zipWith,zip,unzip} = solution;
+const {"group-by":groupBy,"nub-by":nubBy,"delete-by":deleteBy,"delete-firsts-by":deleteFirstsBy} = solution;
+const {init,last,tails,inits,slice,transpose} = solution;
+const {add,zero} = solution;
 
-const fromList = foldl ( z => x => [...z,x] ) ([]) ;
+const fromInt = LC.fromIntWith(LC.config);
+const toInt = LC.toIntWith(LC.config);
+const fromArray = xs => xs.reduceRight( (z,x) => cons(x)(z) , nil ) ;
+const toArray = foldl ( z => x => [...z,x] ) ([]) ;
+
+const rnd = (m,n=0) => Math.random() * (n-m) + m | 0 ;
+const elements = xs => xs[ rnd(xs.length) ] ;
+const rndArray = size => Array.from( { length: rnd(size) }, () => rnd(size) ) ;
 
 const refReplicate = length => x => Array.from( { length }, () => x ) ;
 
 describe("Scott Lists",function(){
-  it("example tests",()=>{
-    assert.deepEqual( fromList( nil ), [] );
-    assert.deepEqual( fromList( singleton ("0") ), ["0"] );
-    assert.deepEqual( fromList( cons ("0") (singleton ("1")) ), ["0","1"] );
-    assert.deepEqual( fromList( replicate (fromInt(0)) ("0") ), [] );
-    assert.deepEqual( fromList( replicate (fromInt(1)) ("0") ), ["0"] );
-    assert.deepEqual( fromList( replicate (fromInt(2)) ("0") ), ["0","0"] );
+  it("nil,cons,singleton",()=>{
+    assert.deepEqual( toArray( nil ), [] );
+    for ( let i=1; i<=10; i++ ) {
+      const x = rnd(i), xs = rndArray(i);
+      assert.deepEqual( toArray( cons (fromInt(x)) (fromArray(xs.map(fromInt))) ).map(toInt), [x,...xs], `after ${ i } tests` );
+      assert.deepEqual( toArray( singleton (fromInt(x)) ).map(toInt), [x], `after ${ i } tests` );
+    }
   });
-  it("random tests",()=>{
-    const rnd = (m,n=0) => Math.random() * (n-m) + m | 0 ;
-    for ( let i=1; i<=100; i++ ) {
-      const m = rnd(i), n = rnd(i);
-      assert.deepEqual( fromList( replicate (fromInt(m)) (String(n)) ), refReplicate(m)(String(n)), `after ${ i } tests` );
+  it("foldr,foldl,scanr,scanl",()=>{
+    for ( let i=1; i<=10; i++ ) {
+      const xs = rndArray(i);
+      assert.deepEqual( toInt( foldr (add) (zero) (fromArray(xs.map(fromInt))) ), xs.reduce((x,y)=>x+y,0), `after ${ i } tests` );
+      assert.deepEqual( toInt( foldl (add) (zero) (fromArray(xs.map(fromInt))) ), xs.reduce((x,y)=>x+y,0), `after ${ i } tests` );
+      assert.deepEqual( toArray( scanr (add) (zero) (fromArray(xs.map(fromInt))) ).map(toInt), xs.reduceRight( (z,x) => [ z[0]+x, ...z ], [0] ), `after ${ i } tests` );
+      assert.deepEqual( toArray( scanl (add) (zero) (fromArray(xs.map(fromInt))) ).map(toInt), xs.reduce( (z,x) => [ ...z, z[z.length-1]+x ] , [0] ), `after ${ i } tests` );
     }
   });
 });

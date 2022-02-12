@@ -1,1 +1,1 @@
-multiply = \ m n s . n ( m s )
+multiply = \ m n s z . n (m s) z

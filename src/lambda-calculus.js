@@ -1,6 +1,7 @@
 /*
 Lambda Calculus evaluator supporting:
   - unlimited recursion
+  - call by need
   - fast (ish?) evaluation
   - shortform syntax
 
@@ -179,7 +180,10 @@ function parseWith(cfg={}) {
               return tm;
             } else {
               if ( verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
-              throw new ReferenceError(`undefined free variable ${ nm }`);
+              if ( nm === name )
+                throw new ReferenceError(`undefined free variable ${ nm }: direct recursive calls are not supported in Let mode`);
+              else
+                throw new ReferenceError(`undefined free variable ${ nm }`);
             }
           } , new Tuple( term, new Env ) );
         else if ( purity==="LetRec" )
@@ -212,7 +216,7 @@ function parseWith(cfg={}) {
         console.error(code);
         console.error(' '.repeat(i) + '^');
         console.error(msg + " at position " + i);
-        throw new SyntaxError;
+        throw new SyntaxError(msg);
       }
       function sp(i) { while ( whitespace.test( code[i] || "" ) ) i++; return i; }
       const expect = c => function(i) { return code[i]===c ? sp(i+1) : 0 ; } ;
