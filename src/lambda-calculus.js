@@ -180,7 +180,10 @@ function parseWith(cfg={}) {
               return tm;
             } else {
               if ( verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
-              throw new ReferenceError(`undefined free variable ${ nm }`);
+              if ( nm === name )
+                throw new ReferenceError(`undefined free variable ${ nm }: direct recursive calls are not supported in Let mode`);
+              else
+                throw new ReferenceError(`undefined free variable ${ nm }`);
             }
           } , new Tuple( term, new Env ) );
         else if ( purity==="LetRec" )
