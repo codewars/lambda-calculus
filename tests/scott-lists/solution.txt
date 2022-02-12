@@ -1,4 +1,4 @@
-# scott-lists.lc
+# scott-list.lc
 
 #import combinators.lc
 B = \ f g x . f (g x)
@@ -18,7 +18,7 @@ Y = \ f . ( \ x . f (x x) ) ( \ x . f (x x) )
 #import scott-booleans.ls
 False = K
 True  = KI
-not = \ p . p True False
+not = C
 and = M
 or  = W C
 #import scott-ordering.lc
@@ -58,7 +58,7 @@ is-none = \ x . x True (K False)   # = is-zero
 is-some = \ x . x False (K True)
 from-option = \ z x . x z I
 from-some = \ x . x () I
-# additional definitions depend on nil and cons
+# additional definitions depend on nil, cons, singleton
 
 # data List a = Nil | Cons a (List a)
 
@@ -71,32 +71,43 @@ cons = \ x xs . \ _nil cons . cons x xs
 # singleton :: a -> List a
 singleton = \ x . cons x nil
 
-# these scott-options definitions depend on nil, cons, singleton
+# these scott-option definitions depend on nil, cons, singleton
 list-to-option = \ xs . xs None \ x _xs . Some x
 option-to-list = \ x . x nil singleton
 map-option = \ fn xs . xs nil \ x xs . fn x (map-option fn xs) (C cons (map-option fn xs))
 cat-options = map-option I
 
-# continuing scott-lists.lc
+# continuing scott-list.lc
 
 # foldr :: (a -> z -> z) -> z -> List a -> z
-foldr = \ fn z xs . xs z ( \ x xs . fn x (foldr fn z xs) )
+foldr = \ fn z xs . xs z \ x xs . fn x (foldr fn z xs)
 
-# null :: List a -> Boolean
-null = \ xs . xs True (KK False)
+# foldl :: (z -> a -> z) -> z -> List a -> z
+foldl = \ fn z xs . xs z (B (foldl fn) (fn z))
+
+# scanr :: (a -> z -> z) -> z -> List a -> List z
+scanr = \ fn z xs . xs (singleton z) \ x xs . ( \ zs . zs () \ z _zs . cons (fn x z) zs ) (scanr fn z xs)
+
+# scanl :: (z -> a -> z) -> z -> List a -> List z
+scanl = \ fn z xs . cons z (xs nil (B (scanl fn) (fn z)))
 
 # take :: Number -> List a -> List a
 take = \ n xs . is-zero n (xs nil \ x xs . cons x (take (pred n) xs)) nil
+
+# drop :: Number -> List a -> List a
+drop = \ n xs . is-zero n (xs nil (K (drop (pred n)))) xs
 
 # append :: List a -> List a -> List a
 append = C (foldr cons)
 
 # concat :: List (List a) -> List a
-concat = \ xss . foldr xss append nil
+concat = foldr append nil
 
-# sum,product :: List Number -> Number
-sum = foldr add zero
-product = foldr mul one
+# snoc :: List a -> a -> List a
+snoc = C (B (foldr cons) singleton)
+
+# uncons :: List a -> Option (Pair a (List a))
+uncons = \ xs . xs None (BB Some Pair)
 
 # iterate :: (a -> a) -> a -> List a
 iterate = \ fn x . cons x (iterate fn (fn x))
@@ -105,10 +116,13 @@ iterate = \ fn x . cons x (iterate fn (fn x))
 repeat = \ x . cons x (repeat x) # repeat = Y (S cons)
 
 # cycle :: List a -> List a
-cycle = \ xs . null xs (concat (repeat xs)) ()
+cycle = \ xs . xs () (concat (repeat xs))
 
 # replicate :: Number -> a -> List a
 replicate = \ n . B (take n) repeat
+
+# unfold :: (a -> Option (Pair z a)) -> a -> List z
+unfold = \ fn x . fn x nil (T \ z x . cons z (unfold fn x))
 
 # head :: List a -> a
 head = \ xs . xs () K
@@ -116,11 +130,15 @@ head = \ xs . xs () K
 # tail :: List a -> List a
 tail = \ xs . xs () KI
 
+# null :: List a -> Boolean
+null = \ xs . xs True (KK False)
+
 # length :: List a -> Number
 length = foldr (K succ) zero
 
-# snoc :: List a -> a -> List a
-snoc = C (B (foldr cons) singleton)
+# sum,product :: List Number -> Number
+sum = foldr add zero
+product = foldr mul one
 
 # map :: (a -> b) -> List a -> List b
 map = \ fn . foldr (B cons fn) nil
@@ -128,99 +146,8 @@ map = \ fn . foldr (B cons fn) nil
 # concat-map :: (a -> List b) -> List a -> List b
 concat-map = BB concat map
 
-# filter :: () -> List a -> List a
+# filter :: (a -> Boolean) -> List a -> List a
 filter = \ p . foldr ( \ x z . p x z (cons x z) ) nil
-filter = \ p . foldr ( \ x . S (p x) (cons x) ) nil
-filter = \ p . foldr (S (B S p) cons) nil
-
-# drop :: Number -> List a -> List a
-drop = \ n xs . is-zero n ( \ _x xs . drop (pred n) xs ) xs
-drop = \ n . is-zero n (K (drop (pred n)))
-
-# split-at :: Number -> List a -> Pair (List a) (List a)
-split-at = \ i xs . is-zero i (xs (Pair nil nil) \ x xs . first (cons x) (split-at (pred i) xs)) (Pair nil xs)
-
-# get :: Number -> List a -> a
-get = \ i xs . is-zero i ( \ x xs . xs () (get (pred i) xs) ) (head xs)
-
-# set :: Number -> a -> List a -> List a
-set = \ i x xs . uncurry append (second (B (cons x) tail) (split-at i xs))
-set = \ i x xs . is-zero i (xs nil \ y ys . cons y (set (pred i) x ys)) (xs nil (K (cons x)))
-
-# any :: (a -> Boolean) -> List a -> Boolean
-any = \ p . foldr (B or p) False
-
-# all :: (a -> Boolean) -> List a -> Boolean
-all = \ p . foldr (B and p) True
-
-# find :: (a -> Boolean) -> List a -> Option a
-find = \ p . foldr ( \ x z . p x z (Some x) ) None
-
-# find-indices :: (a -> Boolean) -> List a -> List Number
-find-indices = \ p . foldr ( \ x k i . p x I (cons i) (k (succ i)) ) (K nil) zero
-
-# find-index :: (a -> Boolean) -> List a -> Option Number
-find-index = \ p . B list-to-option (find-indices p)
-
-# partition :: (a -> Boolean) -> List a -> Pair (List a) (List a)
-partition = \ p . foldr ( \ x . p x second first (cons x) ) (Pair nil nil)
-
-# span :: (a -> Boolean) -> List a -> Pair (List a) (List a)
-span = \ p xs . xs (Pair nil nil) \ y ys . p y (Pair nil xs) (first (cons y) (span p ys))
-
-# minimum-by :: (a -> a -> Boolean) -> List a -> a # cmp ~ le
-minimum-by = \ cmp xs . xs () (foldr \ x z . cmp x z z x)
-
-# maximum-by :: (a -> a -> Boolean) -> List a -> a # cmp ~ le
-maximum-by = \ cmp xs . xs () (foldr \ x z . cmp x z x z)
-
-# insert-by :: (a-> a -> Boolean) -> a -> List a -> List a # cmp ~ le
-insert-by = \ cmp x xs . uncurry append (second (cons x) (span (C cmp x) xs))
-
-# sort-by :: (a -> a -> Boolean) -> List a -> List a # cmp ~ le
-sort-by = \ cmp . foldr (insert-by cmp) nil
-
-# foldl :: (z -> a -> z) -> z -> List a -> z
-foldl = \ fn z xs . xs z (B (foldl fn) (fn z))
-
-# scanl :: (z -> a -> z) -> z -> List a -> List z
-scanl = \ fn z xs . cons z (xs nil (B (scanl fn) (fn z)))
-
-# scanr :: (a -> z -> z) -> z -> List a -> List z
-scanr = \ fn z xs . xs (singleton z) \ x xs . ( \ zs . zs \ z _zs . cons (fn x z) zs ) (scanr fn z xs)
-
-# reverse :: List a -> List a
-reverse = foldl (C cons) nil
-
-# unzip :: List (Pair a b) -> Pair (List a) (List b)
-unzip = foldr ( \ xy xys . xy \ x y . bimap (cons x) (cons y) xys ) (Pair nil nil)
-unzip = foldr (CB \ x y . bimap (cons x) (cons y)) (Pair nil nil)
-
-# zip-with :: (a -> b -> z) -> List a -> List b -> List z
-zip-with = \ fn xs ys . xs nil \ x xs . ys nil \ y ys . cons (fn x y) (zip-with fn xs ys)
-
-# zip :: List a -> List b -> List (Pair a b)
-zip = zip-with Pair
-
-# init :: List a -> List a
-init = \ xs . xs () (S (zip-with K) tail xs)
-
-# last :: List a -> a
-last = foldl KI ()
-
-# slice :: Number -> Number -> List a -> List a
-slice = \ i j xs . gt j i nil (take (sub j i) (drop i xs))
-
-# uncons :: List a -> Option (Pair (a) (List a))
-uncons = \ xs . xs None (B Some Pair)
-
-# transpose :: List (List a) -> List (List a)
-transpose = \ xss . xss nil
-                        \ ys yss . ys (transpose yss)
-                                      (unzip (map-option uncons xss) \ xs xxs . cons xs (transpose xss))
-
-# unfold :: (a -> Option (Pair z a)) -> a -> List z
-unfold = \ fn x . fn x nil (T \ z x . cons z (unfold fn x))
 
 # take-while :: (a -> Boolean) -> List a -> List a
 take-while = \ p xs . xs nil \ x xs . p x nil (cons x (take-while p xs))
@@ -231,19 +158,95 @@ drop-while = \ p xs . xs nil \ x xs . p x xs (drop-while p xs)
 # drop-while-end :: (a -> Boolean) -> List a -> List a
 drop-while-end = \ p . foldr ( \ x z . and (null z) (p x) (cons x z) nil ) nil
 
+# split-at :: Number -> List a -> Pair (List a) (List a)
+split-at = \ i xs . is-zero i (xs (Pair nil nil) \ x xs . first (cons x) (split-at (pred i) xs)) (Pair nil xs)
+
+# get :: Number -> List a -> a
+get = \ i xs . is-zero i (xs () (K (get (pred i)))) (head xs)
+
+# set :: Number -> a -> List a -> List a
+set = \ i x xs . uncurry append (second (B (cons x) tail) (split-at i xs))
+set = \ i x xs . is-zero i (xs nil \ y . cons y (set (pred i) x)) (xs nil (K (cons x)))
+
+# any :: (a -> Boolean) -> List a -> Boolean
+any = \ p . foldr (B or p) False
+
+# all :: (a -> Boolean) -> List a -> Boolean
+all = \ p . foldr (B and p) True
+
+# find :: (a -> Boolean) -> List a -> Option a
+find = BB list-to-option filter
+
+# find-indices :: (a -> Boolean) -> List a -> List Number
+find-indices = \ p . foldr ( \ x k i . p x I (cons i) (k (succ i)) ) (K nil) zero
+
+# find-index :: (a -> Boolean) -> List a -> Option Number
+find-index = BB list-to-option find-indices
+
+# partition :: (a -> Boolean) -> List a -> Pair (List a) (List a)
+partition = \ p . foldr ( \ x . p x second first (cons x) ) (Pair nil nil)
+
+# span :: (a -> Boolean) -> List a -> Pair (List a) (List a)
+span = \ p xs . xs (Pair nil nil) \ y ys . p y (Pair nil xs) (first (cons y) (span p ys))
+
+# minimum-by :: (a -> a -> Boolean) -> List a -> a
+minimum-by = \ le xs . xs () (foldl \ z x . le z x x z)
+
+# maximum-by :: (a -> a -> Boolean) -> List a -> a
+maximum-by = \ le xs . xs () (foldl \ z x . le z x z x)
+
+# insert-by :: (a -> a -> Boolean) -> a -> List a -> List a
+insert-by = \ le x xs . uncurry append (second (cons x) (span (C le x) xs))
+
+# sort-by :: (a -> a -> Boolean) -> List a -> List a
+sort-by = \ le . foldr (insert-by le) nil
+# has all sorts of bad implementation details, but it's simple
+
+# reverse :: List a -> List a
+reverse = foldl (C cons) nil
+
+# zip-with :: (a -> b -> z) -> List a -> List b -> List z
+zip-with = \ fn xs ys . xs nil \ x xs . ys nil \ y ys . cons (fn x y) (zip-with fn xs ys)
+
+# zip :: List a -> List b -> List (Pair a b)
+zip = zip-with Pair
+
+# unzip :: List (Pair a b) -> Pair (List a) (List b)
+unzip = foldr ( \ xy xys . xy \ x y . bimap (cons x) (cons y) xys ) (Pair nil nil)
+unzip = foldr (CB \ x y . bimap (cons x) (cons y)) (Pair nil nil)
+
 # group-by :: (a -> a -> Bool) -> List a -> List (List a)
 group-by = \ eq xs . xs nil \ x xs . span (eq x) xs \ left right . cons (cons x left) (group-by eq right)
-group-by = \ eq xs . xs nil \ x xs . uncurry cons (bimap (cons x) (group-by eq) (span (eq x) xs))
 
-# inits
+# lookup-by :: (a -> Boolean) -> List (Pair a b) -> Option b
+lookup-by = \ p xys . xys None \ xy xys . xy \ x y . p x (lookup-by p xys) (Some y)
+
+# nub-by :: (a -> a -> Boolean) -> List a -> List a
+go = \ z eq xs . xs z \ x xs . go (is-none (find (eq x) z) z (cons x z)) eq xs
+nub-by = go nil
+
+# delete-by :: (a -> a -> Boolean) -> a -> List a -> List a
+delete-by = \ eq x xs . xs nil \ y ys . eq x y (cons y (delete-by eq x ys)) ys
+
+# delete-firsts-by :: (a -> a -> Boolean) -> List a -> List a -> List a
+delete-firsts-by = \ eq . foldl (C (delete-by eq))
+
+# init :: List a -> List a
+init = \ xs . xs () (S (zip-with K) tail xs)
+
+# last :: List a -> a
+last = foldl KI ()
 
 # tails :: List a -> List (List a)
 tails = \ xs . cons xs (xs nil (K tails))
 
-# lookup-by :: (a -> Boolean) -> List (Pair a b) -> Option b
-lookup-by = \ eq xys . xys None \ xy xys . xy \ x y . eq x (lookup-by eq xys) (Some y)
+# inits :: List a -> List (List a)
+inits = \ xs . xs (singleton nil) \ x xs . cons nil (map (cons x) (inits xs))
 
-# nub-by
-# delete-by
-# delete-firsts-by
-# sort-on
+# slice :: Number -> Number -> List a -> List a
+slice = \ i j xs . le i j nil (take (sub j i) (drop i xs))
+
+# transpose :: List (List a) -> List (List a)
+transpose = \ xss . xss nil
+                        \ ys yss . ys (transpose yss)
+                                      (unzip (map-option uncons xss) \ xs xss . cons xs (transpose xss))
