@@ -5,32 +5,31 @@
 
 Written by [Kacarott](https://github.com/Kacarott) and [JohanWiltink](https://github.com/JohanWiltink)
 
+### Install
 
-### Running example tests
-
-**Requirements:**
-- `node`
-- `npm`
-
-From within this directory:
-
-1. Install dependancies with `npm install`
-2. Run tests with `npm test`
+```bash
+$ npm i --save @codewars/lambda-calculus
+```
 
 ### Usage
 
+> NOTE: When writing tests on Codewars, you can use the predefined wrapper module "./files.js" to get
+> the solution file instead of using `fs` like below.
+
 ```javascript
+import { readFileSync } from "fs";
 // Import module
-const LC = require("./src/lambda-calculus.js");
+import * as LC from "@codewars/lambda-calculus";
 
 // Set config options
 LC.config.purity = "Let";
 LC.config.numEncoding = "Church";
 
+const code = readFileSync("solution.lc", {encoding: "utf8"});
 // Compile
-const solution = compile().TRUE;
+const solution = compile(code).TRUE;
 // or
-const {TRUE,FALSE} = compile();
+const {TRUE,FALSE} = compile(code);
 
 // Use
 console.log(solution(true)(false)); // true
@@ -43,12 +42,9 @@ console.log(TRUE(true)(false)) // true
 
 ---
 
-`compile :: String? -> {String: (Term -> Term)}`
+`compile :: String -> {String: (Term -> Term)}`
 
 `compile` is the main entry point of the module. Compiles the specified text according the current `config` options, and returns an object binding all defined terms to their corresponding functions.
-
-If called without an argument, will try open a file called `solution.txt` in the same directory, and parse its contents.
-
 
 ---
 
@@ -64,3 +60,23 @@ If called without an argument, will try open a file called `solution.txt` in the
 | `numEncoding` | `None` | No number encoding. Use of number literals will cause an error. |
 |  | `Church`<br>`Scott`<br>`BinaryScott` | Number literals will be automatically converted to corresponding LC terms, according to the encoding chosen. |
 | `verbosity` | `Calm`<br>`Concise`<br>`Loquacious`<br>`Verbose` | Controls the amount of information that will be reported during compilation. |
+
+### Container Image
+
+The container image used by the Code Runner is available on [GHCR](https://github.com/codewars/lambda-calculus/pkgs/container/lambda-calculus).
+
+```bash
+docker pull ghcr.io/codewars/lambda-calculus:latest
+```
+
+#### Building
+
+The image can be built from this repository:
+
+```bash
+docker build -t ghcr.io/codewars/lambda-calculus:latest .
+```
+
+#### Usage
+
+See [example/](./example/) to learn how to use the image to test locally.
