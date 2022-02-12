@@ -1,6 +1,7 @@
 /*
 Lambda Calculus evaluator supporting:
   - unlimited recursion
+  - call by need
   - fast (ish?) evaluation
   - shortform syntax
 
@@ -212,7 +213,7 @@ function parseWith(cfg={}) {
         console.error(code);
         console.error(' '.repeat(i) + '^');
         console.error(msg + " at position " + i);
-        throw new SyntaxError;
+        throw new SyntaxError(msg);
       }
       function sp(i) { while ( whitespace.test( code[i] || "" ) ) i++; return i; }
       const expect = c => function(i) { return code[i]===c ? sp(i+1) : 0 ; } ;
