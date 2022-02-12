@@ -1,0 +1,21 @@
+{
+  "name": "@codewars/lc-challenge",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "mocha"
+  },
+  "mocha": {
+    "reporter": "@codewars/mocha-reporter",
+    "timeout": 0
+  },
+  "dependencies": {
+    "@codewars/lambda-calculus": "^1.0.0-rc.1"
+  },
+  "devDependencies": {
+    "@codewars/mocha-reporter": "^1.0.0",
+    "chai": "^4.3.6",
+    "mocha": "^9.2.0"
+  }
+}
