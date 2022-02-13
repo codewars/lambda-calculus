@@ -418,15 +418,15 @@ function evalLC(term) {
 // Print an error, with stack trace according to verbosity level
 function printStackTrace(error, term, stack) { console.log("printStackTrace",config.verbosity)
   if ( config.verbosity >= "Concise" )
-    console.error(`${ error } inside definition of <code>${ term.defName }</code>`);
+    console.error(`${ error } inside definition of ${ term.defName }`);
 
   const stackCutoff = config.verbosity < "Verbose" && stack[stack.length-1] == term.defName ? stack.indexOf(term.defName) + 1 : 0 ;
 
   if ( config.verbosity >= "Loquacious" )
-    console.error( stack.slice(stackCutoff).reverse().map( v => `\twhile evaluating <code>${ v }</code>`).join('\n') );
+    console.error( stack.slice(stackCutoff).reverse().map( v => `\twhile evaluating ${ v }`).join('\n') );
 
   if ( config.verbosity >= "Verbose" )
-    console.error( stack.slice().reverse().map( v => `\twhile evaluating <code>${ v }</code>`).join('\n') );
+    console.error( stack.slice().reverse().map( v => `\twhile evaluating ${ v }`).join('\n') );
 }
 
 Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { return toInt(this); } } );
