@@ -140,7 +140,7 @@ export function toIntWith(cfg={}) {
   return function toInt(term) {
     try {
       if ( numEncoding === "Church" ) {
-        return term ( x => x+1 ) ( Primitive(0) ); // still stack-limited
+        return term ( x => x+1 ) ( Primitive(0) );
       } else if ( numEncoding === "Scott" ) {
         let result = 0, evaluating = true;
         while ( evaluating )
