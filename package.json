@@ -9,7 +9,8 @@
   ],
   "scripts": {
     "test": "mocha --reporter spec ./tests/*/test.js",
-    "repl": "node ./src/LC-REPL.js"
+    "repl": "node ./src/LC-REPL.js",
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
