@@ -19,6 +19,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Get image tag
+      run: |
+        # Remove `v` prefix if given
+        tag=${{ github.event.inputs.tag }}
+        echo "IMAGE_TAG=${tag#v}" >> $GITHUB_ENV
+      shell: bash
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
 
@@ -36,6 +43,6 @@ jobs:
         push: true
         tags: |
           ghcr.io/${{ github.repository_owner }}/lambda-calculus:latest
-          ghcr.io/${{ github.repository_owner }}/lambda-calculus:${{ github.event.inputs.tag }}
+          ghcr.io/${{ github.repository_owner }}/lambda-calculus:${{ env.IMAGE_TAG }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
