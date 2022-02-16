@@ -116,7 +116,7 @@ iterate = \ fn x . cons x (iterate fn (fn x))
 repeat = \ x . cons x (repeat x) # repeat = Y (S cons)
 
 # cycle :: List a -> List a
-cycle = \ xs . xs () (concat (repeat xs))
+cycle = \ xs . xs () \ _x _xs . concat (repeat xs)
 
 # replicate :: Number -> a -> List a
 replicate = \ n . B (take n) repeat
