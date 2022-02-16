@@ -25,7 +25,7 @@ const {"insert-by":insertBy,"sort-by":sortBy,reverse} = solution;
 const {"zip-with":zipWith,zip,unzip} = solution;
 const {"group-by":groupBy,"nub-by":nubBy,"delete-by":deleteBy,"delete-firsts-by":deleteFirstsBy} = solution;
 const {init,last,tails,inits,slice,transpose} = solution;
-const {add,zero} = solution;
+const {zero,succ,pred,add,"is-zero":isZero,Pair,None,Some} = solution;
 
 const fromInt = LC.fromIntWith(LC.config);
 const toInt = LC.toIntWith(LC.config);
@@ -33,11 +33,13 @@ const fromArray = xs => xs.reduceRight( (z,x) => cons(x)(z) , nil ) ;
 const toArray = foldl ( z => x => [...z,x] ) ([]) ;
 const fromPair = ([fst,snd]) => Pair(fst)(snd) ;
 const toPair = xy => xy ( fst => snd => [fst,snd] ) ;
+const fromNullable = x => x===null ? None : Some(x) ;
 const toNullable = fn => optX => optX (null) (fn) ;
 
 const rnd = (m,n=0) => Math.random() * (n-m) + m | 0 ;
 const elements = xs => xs[ rnd(xs.length) ] ;
 const rndArray = size => Array.from( { length: rnd(size) }, () => rnd(size) ) ;
+const rndNonEmptyArray = size => Array.from( { length: rnd(size) || 1 }, () => rnd(size) ) ;
 
 describe("Scott Lists",function(){
   it("nil,cons,singleton",()=>{
@@ -78,6 +80,49 @@ describe("Scott Lists",function(){
       assert.deepEqual( toNullable ( xy => toPair(xy).map( (x,i) => i ? toArray(x).map(toInt) : toInt(x) ) ) ( uncons (fromArray(xs.map(fromInt))) ),
                         xs.length ? [ xs[0], xs.slice(1) ] : null ,
                         `after ${ i } tests` );
+    }
+  });
+  it("iterate",()=>{
+    const N = 10;
+    for ( let i=1; i<=10; i++ ) {
+      const x = rnd(i), y = rnd(i);
+      const actual = toArray( take (N) (iterate (add (fromInt(y))) (fromInt(x))) ).map(toInt);
+      const expected = Array.from( { length: N }, (_,i) => x + i * y );
+      assert.deepEqual( actual, expected, `after ${ i } tests` );
+    }
+  });
+  it("repeat",()=>{
+    const N = 10;
+    for ( let i=1; i<=10; i++ ) {
+      const x = rnd(i);
+      const actual = toArray( take (N) (repeat (fromInt(x))) ).map(toInt);
+      const expected = Array.from( { length: N }, () => x );
+      assert.deepEqual( actual, expected, `after ${ i } tests` );
+    }
+  });
+  it("cycle",()=>{
+    const N = 10;
+    for ( let i=1; i<=10; i++ ) {
+      const xs = rndNonEmptyArray(i);
+      const actual = toArray( take (N) (cycle (fromArray(xs))) ).map(toInt);
+      const expected = [].concat(...Array.from( { length: N }, () => xs )).slice(0,N);
+      assert.deepEqual( actual, expected, `after ${ i } tests` );
+    }
+  });
+  it("replicate",()=>{
+    for ( let i=1; i<=10; i++ ) {
+      const n = rnd(i), x = rnd(i);
+      const actual = toArray( replicate (fromInt(n)) (fromInt(x)) ).map(toInt);
+      const expected = Array.from( { length: n }, () => x );
+      assert.deepEqual( actual, expected, `after ${ i } tests` );
+    }
+  });
+  it("unfold",()=>{
+    for ( let i=1; i<=10; i++ ) {
+      const x = rnd(i);
+      const actual = toArray( unfold ( x => (isZero (x)) (Some (Pair (x) (pred (x)))) (None) ) (fromInt(x)) ).map(toInt);
+      const expected = Array.from( { length: x }, (_,i) => x-i );
+      assert.deepEqual( actual, expected, `after ${ i } tests` );
     }
   });
 });
