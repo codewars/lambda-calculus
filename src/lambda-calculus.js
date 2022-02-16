@@ -416,7 +416,7 @@ function evalLC(term) {
 }
 
 // Print an error, with stack trace according to verbosity level
-function printStackTrace(error, term, stack) { console.log("printStackTrace",config.verbosity)
+function printStackTrace(error, term, stack) {
   if ( config.verbosity >= "Concise" )
     console.error(`${ error } inside definition of ${ term.defName }`);
 
