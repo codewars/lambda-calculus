@@ -202,6 +202,13 @@ insert-by = \ le x xs . uncurry append (second (cons x) (span (C le x) xs))
 sort-by = \ le . foldr (insert-by le) nil
 # has all sorts of bad implementation details, but it's simple
 
+# compare-by :: (a -> a -> Ordering) -> List a -> List a -> Ordering
+compare-by = \ cmp xs ys . xs (ys EQ LT)
+                              \ x xs . ys GT
+                                          \ y ys . cmp x y LT
+                                                           (compare-by cmp xs ys)
+                                                           GT
+
 # reverse :: List a -> List a
 reverse = foldl (C cons) nil
 
