@@ -1,7 +1,7 @@
-import { assert, LC, solution } from "./lc-test.js";
+import { assert, LC, getSolution } from "./lc-test.js";
 
 LC.configure({purity: "Let", numEncoding: "Church"});
-const { counter } = LC.compile(solution());
+const { counter } = LC.compile(getSolution());
 
 const T = t => _ => t;
 const F = _ => f => f;
