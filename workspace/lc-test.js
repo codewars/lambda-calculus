@@ -12,4 +12,4 @@ export const getSolution = () => read("./solution.lc");
 export const getPreloaded = () => read("./preloaded.lc");
 
 /** Return the contents of the preloaded file and the solution file combined */
-export const getSolutionWithPreloaded = () => getPreloaded() + "\n" + getSolution();
+export const getSolutionWithPreloaded = () => getPreloaded() + "\n_ = ()\n" + getSolution();
