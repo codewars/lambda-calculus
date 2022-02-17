@@ -1,13 +1,11 @@
-import { assert, config as chaiConfig } from "chai";
-chaiConfig.truncateThreshold = 0;
+// test.js
 
-import * as LC from "@codewars/lambda-calculus";
-import { solution } from "./files.js"; // /workspace/files.js
+import * as LC from "./lc-test.js";
+LC.config.truncateThreshold = 0;
+LC.configure({ purity: "Let", numEncoding: "Church" });
 
-LC.config.purity = "Let";
-LC.config.numEncoding = "Church";
-const toInt = LC.toIntWith(LC.config);
-const { counter } = LC.compile(solution());
+const {counter} = LC.compile(getSolution());
+const {toInt} = LC;
 
 const T = t => _ => t;
 const F = _ => f => f;
