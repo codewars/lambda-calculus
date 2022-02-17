@@ -1,11 +1,7 @@
-import { assert, config as chaiConfig } from "chai";
-chaiConfig.truncateThreshold = 0;
-
-import * as LC from "@codewars/lambda-calculus";
-import { solution } from "./files.js"; // /workspace/files.js
+import { assert, LC, getSolution } from "./lc-test.js";
 
 LC.configure({ purity: "Let", numEncoding: "Church" });
-const { counter } = LC.compile(solution());
+const { counter } = LC.compile(getSolution());
 
 const T = t => _ => t;
 const F = _ => f => f;
