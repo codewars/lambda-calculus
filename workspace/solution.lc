@@ -2,7 +2,6 @@
 
 true  = \ a b . a
 false = \ a b . b
-%invalid = \a b . b
 
 zero = false
 succ = \ n f x . f (n f x)
