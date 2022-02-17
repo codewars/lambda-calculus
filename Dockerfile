@@ -7,7 +7,7 @@ RUN set -ex; \
 
 COPY --chown=codewarrior:codewarrior workspace/package.json /workspace/package.json
 COPY --chown=codewarrior:codewarrior workspace/package-lock.json /workspace/package-lock.json
-COPY --chown=codewarrior:codewarrior workspace/files.js /workspace/files.js
+COPY --chown=codewarrior:codewarrior workspace/lc-test.js /workspace/lc-test.js
 
 USER codewarrior
 WORKDIR /workspace
