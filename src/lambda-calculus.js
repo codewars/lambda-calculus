@@ -16,10 +16,12 @@ Kacarott - https://github.com/Kacarott
 */
 
 // Default options
-export const config = { verbosity: "Calm"      //  Calm | Concise | Loquacious | Verbose
-               , purity: "Let"          //  Let | LetRec | PureLC
-               , numEncoding: "Church"  //  None | Church | Scott | BinaryScott
+const config = { verbosity: "Calm"    //  Calm | Concise | Loquacious | Verbose
+               , purity: "PureLC"     //  Let | LetRec | PureLC
+               , numEncoding: "None"  //  None | Church | Scott | BinaryScott
                };
+
+export function configure(cfg={}) { return Object.assign(config,cfg); }
 
 function union(left, right) {
   const r = new Set(left);
@@ -98,238 +100,217 @@ primitives.setThunk( "trace", new Tuple( Primitive( function(v) { console.info(S
 
 const Y = new L("f",new A(new L("x",new A(new V("f"),new A(new V("x"),new V("x")))),new L("x",new A(new V("f"),new A(new V("x"),new V("x"))))));
 
-export function fromInt(n) { return fromIntWith()(n); }
-
-export function fromIntWith(cfg={}) {
-  const {numEncoding,verbosity} = Object.assign( {}, config, cfg );
-  return function fromInt(n) {
-    if ( numEncoding === "Church" )
-      if ( n >= 0 )
-        return new L("s", new L("z", Array(n).fill().reduce( s => new A(new V("s"), s), new V("z")) ));
-      else {
-        if ( verbosity >= "Concise" ) console.error(`fromInt.Church: negative number ${ n }`);
-        throw new RangeError;
-      }
-    else if ( numEncoding === "Scott" ) // data Int = Zero | Succ Int
-      if ( n >= 0 )
-        return new Array(n).fill().reduce( v => new L('_', new L('f', new A(new V('f'), v))), new L('z', new L('_', new V('z'))) );
-      else {
-        if ( verbosity >= "Concise" ) console.error(`fromInt.Scott: negative number ${ n }`);
-        throw new RangeError;
-      }
-    else if ( numEncoding === "BinaryScott" ) // data Int = End | Even Int | Odd Int // LittleEndian, padding ( trailing ) 0 bits are out of spec - behaviour is undefined
-      if ( n >= 0 ) {
-        const zero = new L('z', new L('_', new L('_', new V('z'))));
-        return n ? n.toString(2).split("").reduce( (z,bit) => new L('_', new L('f', new L('t', new A(new V( bit==='0' ? 'f' : 't' ), z)))), zero ) : zero ;
-      } else {
-        if ( verbosity >= "Concise" ) console.error(`fromInt.BinaryScott: negative number ${ n }`);
-        throw new RangeError;
-      }
-    else if ( numEncoding === "None" ) {
-      if ( verbosity >= "Concise" ) console.error(`fromInt.None: number ${ n }`);
-      throw new EvalError;
-    } else
-      return numEncoding.fromInt(n); // Custom encoding
-  } ;
+export function fromInt(n) {
+  if ( config.numEncoding === "Church" )
+    if ( n >= 0 )
+      return new L("s", new L("z", Array(n).fill().reduce( s => new A(new V("s"), s), new V("z")) ));
+    else {
+      if ( config.verbosity >= "Concise" ) console.error(`fromInt.Church: negative number ${ n }`);
+      throw new RangeError;
+    }
+  else if ( config.numEncoding === "Scott" ) // data Int = Zero | Succ Int
+    if ( n >= 0 )
+      return new Array(n).fill().reduce( v => new L('_', new L('f', new A(new V('f'), v))), new L('z', new L('_', new V('z'))) );
+    else {
+      if ( config.verbosity >= "Concise" ) console.error(`fromInt.Scott: negative number ${ n }`);
+      throw new RangeError;
+    }
+  else if ( config.numEncoding === "BinaryScott" ) // data Int = End | Even Int | Odd Int // LittleEndian, padding ( trailing ) 0 bits are out of spec - behaviour is undefined
+    if ( n >= 0 ) {
+      const zero = new L('z', new L('_', new L('_', new V('z'))));
+      return n ? n.toString(2).split("").reduce( (z,bit) => new L('_', new L('f', new L('t', new A(new V( bit==='0' ? 'f' : 't' ), z)))), zero ) : zero ;
+    } else {
+      if ( config.verbosity >= "Concise" ) console.error(`fromInt.BinaryScott: negative number ${ n }`);
+      throw new RangeError;
+    }
+  else if ( config.numEncoding === "None" ) {
+    if ( config.verbosity >= "Concise" ) console.error(`fromInt.None: number ${ n }`);
+    throw new EvalError;
+  } else
+    return config.numEncoding.fromInt(n); // Custom encoding
 }
 
-export function toInt(term) { return toIntWith()(term); }
-
-export function toIntWith(cfg={}) {
-  const {numEncoding,verbosity} = Object.assign( {}, config, cfg );
-  return function toInt(term) {
-    try {
-      if ( numEncoding === "Church" ) {
-        return term ( x => x+1 ) ( Primitive(0) );
-      } else if ( numEncoding === "Scott" ) {
-        let result = 0, evaluating = true;
-        while ( evaluating )
-          term ( () => evaluating = false ) ( n => () => { term = n; result++ } ) ();
-        return result;
-      } else if ( numEncoding === "BinaryScott" ) {
-        let result = 0, bit = 1, evaluating = true;
-        while ( evaluating )
-          term ( () => evaluating = false ) ( n => () => { term = n; bit *= 2 } ) ( n => () => { term = n; result += bit; bit *= 2 } ) ();
-        return result;
-      } else if ( numEncoding === "None" )
-        return term;
-      else
-        return numEncoding.toInt(term); // Custom encoding
-    } catch (e) {
-      if ( verbosity >= "Concise" ) console.error(`toInt: ${ term } is not a number in numEncoding ${ numEncoding }`);
-      throw e;
-    }
-  } ;
-}
-
-// parse :: String -> Env { String => Term }
-function parse(code) { return parseWith()(code); }
-
-function parseWith(cfg={}) {
-  const {numEncoding,purity,verbosity} = Object.assign( {}, config, cfg );
-  const fromInt = fromIntWith({numEncoding,purity,verbosity});
-  return function parse(code) {
-    function parseTerm(env,code) {
-      function wrap(name,term) {
-        const FV = term.free(); FV.delete("()");
-        if ( purity === "Let" )
-          return Array.from(FV).reduce( (tm,nm) => {
-            if ( env.has(nm) ) {
-              if ( config.verbosity >= "Verbose" ) console.debug(`   using ${ nm } = ${ env.getValue(nm) }`);
-              tm.env.set( nm, env.get(nm) );
-              return tm;
-            } else {
-              if ( verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
-              if ( nm === name )
-                throw new ReferenceError(`undefined free variable ${ nm }: direct recursive calls are not supported in Let mode`);
-              else
-                throw new ReferenceError(`undefined free variable ${ nm }`);
-            }
-          } , new Tuple( term, new Env ) );
-        else if ( purity==="LetRec" )
-          return Array.from(FV).reduce( (tm,nm) => {
-            if ( nm === name )
-              return tm;
-            else if ( env.has(nm) ) {
-              if ( config.verbosity >= "Verbose" ) console.debug(`   using ${ nm } = ${ env.getValue(nm) }`);
-              tm.env.set( nm, env.get(nm) );
-              return tm;
-            } else {
-              if ( verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
-              throw new ReferenceError(`undefined free variable ${ nm }`);
-            }
-          } , new Tuple( FV.has(name) ? new A(Y,new L(name,term)) : term , new Env ) );
-        else if ( purity==="PureLC" )
-          if ( FV.size ) {
-            if ( verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
-            throw new EvalError(`unresolvable free variable(s) ${ Array.from(FV) }: all expressions must be closed in PureLC mode`);
-          } else
-            return new Tuple( term, new Env );
-        else
-          throw new RangeError(`config.purity: unknown setting "${ purity }"`);
-      }
-      const letters = /[a-z]/i;
-      const digits = /\d/;
-      const identifierChars = /[-'\w]/;
-      const whitespace = /\s/;
-      function error(i,msg) {
-        console.error(code);
-        console.error(' '.repeat(i) + '^');
-        console.error(msg + " at position " + i);
-        throw new SyntaxError(msg);
-      }
-      function sp(i) { while ( whitespace.test( code[i] || "" ) ) i++; return i; }
-      const expect = c => function(i) { return code[i]===c ? sp(i+1) : 0 ; } ;
-      function name(i) {
-        if ( code[i]==='_' ) {
-          while ( identifierChars.test( code[i] || "" ) ) i++;
-          return [sp(i),"_"];
-        } else if ( letters.test( code[i] || "" ) ) {
-          let j = i+1;
-          while ( identifierChars.test( code[j] || "" ) ) j++;
-          return [sp(j),code.slice(i,j)];
-        } else
-          return null;
-      }
-      function n(i) {
-        if ( digits.test(code[i]) ) {
-          let j = i+1;
-          while ( digits.test(code[j]) ) j++;
-          return [sp(j),fromInt(Number(code.slice(i,j)))];
-        } else
-          return null;
-      }
-      function v(i) {
-        const r = name(i);
-        if ( r ) {
-          const [j,name] = r;
-          return [j,new V(name)];
-        } else
-          return null;
-      }
-      function l(i) {
-        const j = expect('\\')(i);
-        if ( j ) {
-          let arg, args = [];
-          let k = j;
-          while ( arg = name(k) ) {
-            [k,arg] = arg;
-            args.push(arg);
-          }
-          if ( args.length ) {
-            const l = expect('.')(k) || error(k,"lambda: expected '.'") ;
-            const [m,body] = term(l) || error(l,"lambda: expected a lambda calculus term") ;
-            return [ m, args.reduceRight( (body,arg) => new L(arg,body) , body ) ];
-          } else
-            error(k,"lambda: expected at least one named argument");
-        } else
-          return null;
-      }
-      function a(i) {
-        let q, r = [];
-        let j = i;
-        while ( q = paren_d(term)(j) || l(j) || v(j) || n(j) ) {
-          [j,q] = q;
-          r.push(q);
-        }
-        if ( r.length )
-          return [ j, r.reduce( (z,term) => new A(z,term) ) ];
-        else
-          return null;
-      }
-      const paren_d = inner => function(i) {
-        const j = expect('(')(i);
-        if ( j ) {
-          const q = inner(j);
-          if ( q ) {
-            const [k,r] = q;
-            const l = expect(')')(k) || error(k,"paren_d: expected ')'") ;
-            return [l,r];
-          } else {
-            const k = expect(')')(j) || error(j,"paren_d: expected ')'") ;
-            const undefinedTerm = new V("()");
-            undefinedTerm.defName = name(0)[1];
-            return [k, undefinedTerm];
-          }
-        } else
-          return null;
-      } ;
-      const term = a;
-      function defn(i) {
-        const [j,nm] = name(i)   || error(i,"defn: expected a name") ;
-        const k = expect('=')(j) || error(j,"defn: expected '='") ;
-        const [l,tm] = term(k)   || error(k,"defn: expected a lambda calculus term") ;
-        return [l,[nm,tm]];
-      }
-      const [i,r] = defn(0);
-      if ( i===code.length ) {
-        const [name,term] = r;
-        if ( config.verbosity >= "Loquacious" )
-          console.debug(`compiled ${ name }${ config.verbosity >= "Verbose" ? ` = ${ term }` : "" }`);
-        return env.setThunk( name, wrap(name,term));
-      } else
-        error(i,"defn: incomplete parse");
-    }
-    return code.replace( /#.*$/gm, "" )                  // ignore comments
-                .replace( /\n(?=\s)/g, "" )              // continue lines
-                .split( '\n' )                           // split lines
-                .filter( term => /\S/.test(term) )       // skip empty lines
-                .reduce(parseTerm, new Env(primitives)); // parse lines
+export function toInt(term) {
+  try {
+    if ( config.numEncoding === "Church" ) {
+      return term ( x => x+1 ) ( Primitive(0) );
+    } else if ( config.numEncoding === "Scott" ) {
+      let result = 0, evaluating = true;
+      while ( evaluating )
+        term ( () => evaluating = false ) ( n => () => { term = n; result++ } ) ();
+      return result;
+    } else if ( config.numEncoding === "BinaryScott" ) {
+      let result = 0, bit = 1, evaluating = true;
+      while ( evaluating )
+        term ( () => evaluating = false ) ( n => () => { term = n; bit *= 2 } ) ( n => () => { term = n; result += bit; bit *= 2 } ) ();
+      return result;
+    } else if ( config.numEncoding === "None" )
+      return term;
+    else
+      return numEncoding.toInt(term); // Custom encoding
+  } catch (e) {
+    if ( config.verbosity >= "Concise" ) console.error(`toInt: ${ term } is not a number in numEncoding ${ numEncoding }`);
+    throw e;
   }
 }
 
-export function compile(code) { return compileWith()(code); }
+// parse :: String -> Env { String => Term }
+function parse(code) {
+  function parseTerm(env,code) {
+    function wrap(name,term) {
+      const FV = term.free(); FV.delete("()");
+      if ( config.purity === "Let" )
+        return Array.from(FV).reduce( (tm,nm) => {
+          if ( env.has(nm) ) {
+            if ( config.verbosity >= "Verbose" ) console.debug(`   using ${ nm } = ${ env.getValue(nm) }`);
+            tm.env.set( nm, env.get(nm) );
+            return tm;
+          } else {
+            if ( config.verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
+            if ( nm === name )
+              throw new ReferenceError(`undefined free variable ${ nm }: direct recursive calls are not supported in Let mode`);
+            else
+              throw new ReferenceError(`undefined free variable ${ nm }`);
+          }
+        } , new Tuple( term, new Env ) );
+      else if ( config.purity==="LetRec" )
+        return Array.from(FV).reduce( (tm,nm) => {
+          if ( nm === name )
+            return tm;
+          else if ( env.has(nm) ) {
+            if ( config.verbosity >= "Verbose" ) console.debug(`   using ${ nm } = ${ env.getValue(nm) }`);
+            tm.env.set( nm, env.get(nm) );
+            return tm;
+          } else {
+            if ( config.verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
+            throw new ReferenceError(`undefined free variable ${ nm }`);
+          }
+        } , new Tuple( FV.has(name) ? new A(Y,new L(name,term)) : term , new Env ) );
+      else if ( config.purity==="PureLC" )
+        if ( FV.size ) {
+          if ( config.verbosity >= "Concise" ) console.error(`parse: while defining ${ name } = ${ term }`);
+          throw new EvalError(`unresolvable free variable(s) ${ Array.from(FV) }: all expressions must be closed in PureLC mode`);
+        } else
+          return new Tuple( term, new Env );
+      else
+        throw new RangeError(`config.purity: unknown setting "${ purity }"`);
+    }
+    const letters = /[a-z]/i;
+    const digits = /\d/;
+    const identifierChars = /[-'\w]/;
+    const whitespace = /\s/;
+    function error(i,msg) {
+      console.error(code);
+      console.error(' '.repeat(i) + '^');
+      console.error(msg + " at position " + i);
+      throw new SyntaxError(msg);
+    }
+    function sp(i) { while ( whitespace.test( code[i] || "" ) ) i++; return i; }
+    const expect = c => function(i) { return code[i]===c ? sp(i+1) : 0 ; } ;
+    function name(i) {
+      if ( code[i]==='_' ) {
+        while ( identifierChars.test( code[i] || "" ) ) i++;
+        return [sp(i),"_"];
+      } else if ( letters.test( code[i] || "" ) ) {
+        let j = i+1;
+        while ( identifierChars.test( code[j] || "" ) ) j++;
+        return [sp(j),code.slice(i,j)];
+      } else
+        return null;
+    }
+    function n(i) {
+      if ( digits.test(code[i]) ) {
+        let j = i+1;
+        while ( digits.test(code[j]) ) j++;
+        return [sp(j),fromInt(Number(code.slice(i,j)))];
+      } else
+        return null;
+    }
+    function v(i) {
+      const r = name(i);
+      if ( r ) {
+        const [j,name] = r;
+        return [j,new V(name)];
+      } else
+        return null;
+    }
+    function l(i) {
+      const j = expect('\\')(i);
+      if ( j ) {
+        let arg, args = [];
+        let k = j;
+        while ( arg = name(k) ) {
+          [k,arg] = arg;
+          args.push(arg);
+        }
+        if ( args.length ) {
+          const l = expect('.')(k) || error(k,"lambda: expected '.'") ;
+          const [m,body] = term(l) || error(l,"lambda: expected a lambda calculus term") ;
+          return [ m, args.reduceRight( (body,arg) => new L(arg,body) , body ) ];
+        } else
+          error(k,"lambda: expected at least one named argument");
+      } else
+        return null;
+    }
+    function a(i) {
+      let q, r = [];
+      let j = i;
+      while ( q = paren_d(term)(j) || l(j) || v(j) || n(j) ) {
+        [j,q] = q;
+        r.push(q);
+      }
+      if ( r.length )
+        return [ j, r.reduce( (z,term) => new A(z,term) ) ];
+      else
+        return null;
+    }
+    const paren_d = inner => function(i) {
+      const j = expect('(')(i);
+      if ( j ) {
+        const q = inner(j);
+        if ( q ) {
+          const [k,r] = q;
+          const l = expect(')')(k) || error(k,"paren_d: expected ')'") ;
+          return [l,r];
+        } else {
+          const k = expect(')')(j) || error(j,"paren_d: expected ')'") ;
+          const undefinedTerm = new V("()");
+          undefinedTerm.defName = name(0)[1];
+          return [k, undefinedTerm];
+        }
+      } else
+        return null;
+    } ;
+    const term = a;
+    function defn(i) {
+      const [j,nm] = name(i)   || error(i,"defn: expected a name") ;
+      const k = expect('=')(j) || error(j,"defn: expected '='") ;
+      const [l,tm] = term(k)   || error(k,"defn: expected a lambda calculus term") ;
+      return [l,[nm,tm]];
+    }
+    const [i,r] = defn(0);
+    if ( i===code.length ) {
+      const [name,term] = r;
+      if ( config.verbosity >= "Loquacious" )
+        console.debug(`compiled ${ name }${ config.verbosity >= "Verbose" ? ` = ${ term }` : "" }`);
+      return env.setThunk( name, wrap(name,term));
+    } else
+      error(i,"defn: incomplete parse");
+  }
+  return code.replace( /#.*$/gm, "" )                  // ignore comments
+              .replace( /\n(?=\s)/g, "" )              // continue lines
+              .split( '\n' )                           // split lines
+              .filter( term => /\S/.test(term) )       // skip empty lines
+              .reduce(parseTerm, new Env(primitives)); // parse lines
+}
 
-export function compileWith(cfg={}) {
-  const {numEncoding,purity,verbosity} = Object.assign( {}, config, cfg );
-  return function compile(code) {
-    if (typeof code !== "string" || !code) throw new TypeError("missing code");
-    const env = parseWith({numEncoding,purity,verbosity})(code);
-    const r = {};
-    for ( const [name] of env )
-      Object.defineProperty( r, name, { get() { return evalLC(new Tuple(new V(name), env)); }, enumerable: true } );
-    return r;
-  } ;
+export function compile(code) {
+  if ( typeof code !== "string" || ! code ) throw new TypeError("missing code");
+  const env = parse(code);
+  const r = {};
+  for ( const [name] of env )
+    Object.defineProperty( r, name, { get() { return evalLC(new Tuple(new V(name), env)); }, enumerable: true } );
+  return r;
 }
 
 // Top level call, term :: Tuple
@@ -341,7 +322,7 @@ function evalLC(term) {
     function result(arg) {
       let argEnv;
       if ( arg?.term && arg?.env ) ({ term: arg, env: argEnv } = arg); // if callback is passed another callback, or a term
-      const termVal = new Tuple( typeof arg !== 'number' ? arg : fromInt(arg) , new Env(argEnv) );
+      const termVal = new Tuple( typeof arg === 'number' ? fromInt(arg) : arg , new Env(argEnv) );
       return runEval( new Tuple(term.body, new Env(env).setThunk(term.name, termVal)), stack );
     }
     return Object.assign( result, {term,env} );

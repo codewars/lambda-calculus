@@ -2,8 +2,7 @@ import {readFileSync} from "fs";
 import {assert} from "chai";
 
 import * as LC from "../../src/lambda-calculus.js";
-LC.config.purity = "LetRec";
-LC.config.numEncoding = "Scott";
+LC.configure({ purity: "LetRec", numEncoding: "Scott" });
 
 const solutionText = readFileSync(new URL("./solution.txt", import.meta.url), {encoding: "utf8"});
 const {delta} = LC.compile(solutionText);
@@ -18,8 +17,7 @@ succ = \ n _ f . f n
 incr = \ n a . a (\ x _ . x) (\ b . b n (incr (succ n)))
 inf = incr 0`);
 
-const fromInt = LC.fromIntWith(LC.config);
-const toInt = LC.toIntWith(LC.config);
+const {toInt} = LC;
 
 const Fst = fst => snd => fst ;
 const Snd = fst => snd => snd ;
@@ -37,7 +35,8 @@ function toArr(a, n) { // lists use double pair encoding, not Scott!
 
 describe("delta-generators", () => {
   it("fixed tests", function() {
-    assert.deepEqual( toArr( delta (fromInt(2)) (fin), 2 ), [1, 1] );
-    assert.deepEqual( toArr( delta (fromInt(1)) (inf), 10 ), [1,1,1,1,1,1,1,1,1,1] );
+    LC.configure({ purity: "LetRec", numEncoding: "Scott" });
+    assert.deepEqual( toArr( delta (2) (fin), 2 ), [1, 1] );
+    assert.deepEqual( toArr( delta (1) (inf), 10 ), [1,1,1,1,1,1,1,1,1,1] );
   });
 });
