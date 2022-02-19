@@ -147,7 +147,7 @@ export function toInt(term) {
     } else if ( config.numEncoding === "None" )
       return term;
     else
-      return numEncoding.toInt(term); // Custom encoding
+      return config.numEncoding.toInt(term); // Custom encoding
   } catch (e) {
     if ( config.verbosity >= "Concise" ) console.error(`toInt: ${ term } is not a number in numEncoding ${ numEncoding }`);
     throw e;
