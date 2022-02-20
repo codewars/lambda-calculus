@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 
 import { assert, config } from "chai";
-import * as LC from "../src/lambda-calculus.js";
+import * as LC from "@codewars/lambda-calculus";
 
 export { assert, config, LC };
 
