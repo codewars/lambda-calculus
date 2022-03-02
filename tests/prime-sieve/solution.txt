@@ -20,23 +20,23 @@ Z  = \ f . ( \ x . f \ y . x x y ) ( \ x . f \ y . x x y )
 
 #import Ordering.lc
 
-LT = \ lt eq gt . lt
-EQ = \ lt eq gt . eq
-GT = \ lt eq gt . gt
+LT = \ lt _eq _gt . lt
+EQ = \ _lt eq _gt . eq
+GT = \ _lt _eq gt . gt
 
 # import Booleans.lc
 
-False = \ false true . false
-True = \ false true . true
+False = \ false _true . false
+True = \ _false true . true
 
 # data Number = End | Even Number | Odd Number
 
 # zero :: Int
-zero = \ end even odd . end
+zero = \ end _even _odd . end
 
 # shiftR0,shiftR1 :: Int -> Int
-shiftR0 = \ n . \ end even odd . even n # mind that a shiftR in LE is a multiplication
-shiftR1 = \ n . \ end even odd . odd  n # mind that a shiftR in LE is a multiplication
+shiftR0 = \ n . \ _end even _odd . even n # mind that a shiftR in LE is a multiplication
+shiftR1 = \ n . \ _end _even odd . odd  n # mind that a shiftR in LE is a multiplication
 
 # isZero :: Int -> Bool
 isZero = \ n . n True (K False) (K False)
@@ -84,10 +84,10 @@ minus = \ m n . gt m n zero (unpad (unsafeMinus m n)) # needs explicit unpad or 
 pair = \ x y . \ pair . pair x y
 
 # fst :: Pair a b -> a
-fst = \ xy . xy ( \ x y . x )
+fst = \ xy . xy ( \ x _y . x )
 
 # snd :: Pair a b -> b
-snd = \ xy . xy ( \ x y . y )
+snd = \ xy . xy ( \ _x y . y )
 
 # data Stream a :: Cons a (Stream a)
 
@@ -95,10 +95,10 @@ snd = \ xy . xy ( \ x y . y )
 cons = \ x xs . \ cons . cons x xs
 
 # head :: Stream a -> a
-head = \ xs . xs ( \ x xs . x )
+head = \ xs . xs ( \ x _xs . x )
 
 # tail :: Stream a -> Stream a
-tail = \ xs . xs ( \ x xs . xs )
+tail = \ xs . xs ( \ _x xs . xs )
 
 # map :: (a -> b) -> Stream a -> Stream b
 map = \ fn xs . xs ( \ x xs . cons (fn x) (map fn xs) )
@@ -112,10 +112,10 @@ le = \ m n . compare (head m) (head n) True True False
 # data Set a = Nil | Branch a (Set a) (Set a)
 
 # empty :: Set a
-empty = \ nil branch . nil
+empty = \ nil _branch . nil
 
 # branch :: a -> Set a -> Set a -> Set a
-branch = \ x left right . \ nil branch . branch x left right
+branch = \ x left right . \ _nil branch . branch x left right
 
 # insert :: (Ord a) => a -> Set a -> Set a
 insert = \ x set .
@@ -129,7 +129,7 @@ insert = \ x set .
 
 # findMin :: (Partial) => Set a -> a
 findMin = \ set . set ()
-          \ x left right .
+          \ x left _right .
               left x ( \ _ _ _ . findMin left )
 
 # minView :: (Partial) => Set a -> (a,Set a)

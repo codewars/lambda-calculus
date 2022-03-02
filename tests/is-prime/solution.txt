@@ -1,8 +1,8 @@
 # JohanWiltink
 
 Y = \ f . ( \ x . f (x x) ) ( \ x . f (x x) )
-True = \ t f . t
-False = \ t f . f
+True = \ t _f . t
+False = \ _t f . f
 Succ = \ n s z . s (n s z)
 Pred = \ n s z . n ( \ f g . g (f s) ) (\_.z) \x.x
 Minus = \ m n . n Pred m
