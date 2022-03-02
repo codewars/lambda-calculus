@@ -54,9 +54,9 @@ console.log(TRUE(true)(false)) // true
 
 | Property | Option | Description |
 | -------- | ---- | ---- |
-| `purity` | `Let` (default) | Allows definition of named terms which can be used in subsequent definitions. Does *not* support recursion. |
+| `purity` | `Let` | Allows definition of named terms which can be used in subsequent definitions. Does *not* support recursion. |
 |  | `LetRec` | The same as `Let`, but additionally supporting direct recursion. |
-|  | `PureLC` | Pure lambda calculus only. Terms are still named so that they can be accessed by tests, but named terms may not be used elsewhere. |
+|  | `PureLC` (default) | Pure lambda calculus only. Terms are still named so that they can be accessed by tests, but named terms may not be used elsewhere. |
 | `numEncoding` | `None` | No number encoding. Use of number literals will cause an error. |
 |  | `Church`<br>`Scott`<br>`BinaryScott` | Number literals will be automatically converted to corresponding LC terms, according to the encoding chosen. |
 | `verbosity` | `Calm`<br>`Concise`<br>`Loquacious`<br>`Verbose` | Controls the amount of information that will be reported during compilation. |
