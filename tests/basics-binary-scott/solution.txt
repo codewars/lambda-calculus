@@ -17,28 +17,28 @@ Z  = \ f . ( \ x . f \ y . x x y ) ( \ x . f \ y . x x y )
 
 #import Boolean.lc
 
-False = \ f t . f
-True  = \ f t . t
+False = \ f _t . f
+True  = \ _f t . t
 
-not = \ p . p True False
+not = \ p . \ f t . p t f
 
 and     = \ p   . p p
 or      = \ p q . p q p
 xor     = \ p q . p q (not q)
-implies = \ p   . p (True)
+implies = \ p   . p True
 
 #import Ordering.lc
 
-LT = \ lt eq gt . lt
-EQ = \ lt eq gt . eq
-GT = \ lt eq gt . gt
+LT = \ lt _eq _gt . lt
+EQ = \ _lt eq _gt . eq
+GT = \ _lt _eq gt . gt
 
 #import Pair.lc
 
 Pair = \ x y fn . fn x y
 
-fst = \ xy . xy \ x _ . x
-snd = \ xy . xy \ _ y . y
+fst = \ xy . xy \ x _y . x
+snd = \ xy . xy \ _x y . y
 
 first  = \ fn xy  . xy \ x   . Pair (fn x)
 second = \ fn xy  . xy \ x y . Pair x (fn y)
@@ -48,11 +48,11 @@ curry  = \ fn xy  . xy fn
 
 # data Number = End | Even Number | Odd Number
 
-zero = \ end even odd . end
+zero = \ end _even _odd . end
 
-shiftR0 = \ n . \ end even odd . even n # mind that a shiftR in LE is a multiplication
-shiftR1 = \ n . \ end even odd . odd  n # mind that a shiftR in LE is a multiplication
-shiftL  = \ n . n n I I                 # mind that a shiftL in LE is a division
+shiftR0 = \ n . \ _end even _odd . even n # mind that a shiftR in LE is a multiplication
+shiftR1 = \ n . \ _end _even odd . odd  n # mind that a shiftR in LE is a multiplication
+shiftL  = \ n . n n I I                   # mind that a shiftL in LE is a division
 
 isStrictZero = \ n . n True (K False) (K False) # disallow padding zeroes # O(1)
 isZero       = \ n . n True    isZero (K False) #    allow padding zeroes # amortised O(2), so don't worry too much
