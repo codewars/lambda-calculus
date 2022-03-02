@@ -153,7 +153,7 @@ filter = \ p . foldr ( \ x z . p x z (cons x z) ) nil
 take-while = \ p xs . xs nil \ x xs . p x nil (cons x (take-while p xs))
 
 # drop-while :: (a -> Boolean) -> List a -> List a
-drop-while = \ p xs . xs nil \ x xs . p x xs (drop-while p xs)
+drop-while = \ p xxs . xxs nil \ x xs . p x xxs (drop-while p xs)
 
 # drop-while-end :: (a -> Boolean) -> List a -> List a
 drop-while-end = \ p . foldr ( \ x z . and (null z) (p x) (cons x z) nil ) nil
