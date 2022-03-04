@@ -1,7 +1,7 @@
 {
   "name": "@codewars/lambda-calculus",
   "type": "module",
-  "version": "1.0.0-rc.5",
+  "version": "1.0.0",
   "description": "Lambda Calculus evaluator for Codewars",
   "main": "src/lambda-calculus.js",
   "files": [
