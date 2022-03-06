@@ -133,7 +133,9 @@ export function fromInt(n) {
 export function toInt(term) {
   try {
     if ( config.numEncoding === "Church" ) {
-      return term ( x => x+1 ) ( Primitive(0) );
+      const succ = x => x+1 ;
+      const result = term ( succ ) ;
+      return result ( result === succ ? 0 : Primitive(0) );
     } else if ( config.numEncoding === "Scott" ) {
       let result = 0, evaluating = true;
       while ( evaluating )
