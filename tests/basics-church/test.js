@@ -36,5 +36,6 @@ describe("Church tests",function(){
     assert.equal( times(1e2)(1e1), 1e3 );
     assert.equal( pow(10)(3), 1e3 );
     assert.equal( pred(pow(10)(3)), 1e3-1 );
+    assert.equal( pow(0)(0), 1);
   });
 });
