@@ -11,7 +11,7 @@
     "timeout": 0
   },
   "dependencies": {
-    "@codewars/lambda-calculus": "^1.0.0"
+    "@codewars/lambda-calculus": "^1.0.1"
   },
   "devDependencies": {
     "@codewars/mocha-reporter": "^1.0.0",
