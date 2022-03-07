@@ -325,6 +325,7 @@ function evalLC(term) {
       let argEnv;
       if ( arg?.term && arg?.env ) ({ term: arg, env: argEnv } = arg); // if callback is passed another callback, or a term
       const termVal = new Tuple( typeof arg === 'number' ? fromInt(arg) : arg , new Env(argEnv) );
+      if (term.name === "_") return runEval( new Tuple(term.body, new Env(env)), stack );
       return runEval( new Tuple(term.body, new Env(env).setThunk(term.name, termVal)), stack );
     }
     return Object.assign( result, {term,env} );
