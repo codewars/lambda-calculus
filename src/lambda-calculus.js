@@ -232,7 +232,10 @@ function parse(code) {
       const r = name(i);
       if ( r ) {
         const [j,name] = r;
-        return [j,new V(name)];
+        if ( name==="_" )
+          return [j,new V("()")];
+        else
+          return [j,new V(name)];
       } else
         return null;
     }
@@ -325,8 +328,10 @@ function evalLC(term) {
       let argEnv;
       if ( arg?.term && arg?.env ) ({ term: arg, env: argEnv } = arg); // if callback is passed another callback, or a term
       const termVal = new Tuple( typeof arg === 'number' ? fromInt(arg) : arg , new Env(argEnv) );
-      if (term.name === "_") return runEval( new Tuple(term.body, new Env(env)), stack );
-      return runEval( new Tuple(term.body, new Env(env).setThunk(term.name, termVal)), stack );
+      if ( term.name==="_" )
+        return runEval( new Tuple(term.body, new Env(env)), stack );
+      else
+        return runEval( new Tuple(term.body, new Env(env).setThunk(term.name, termVal)), stack );
     }
     return Object.assign( result, {term,env} );
   }
