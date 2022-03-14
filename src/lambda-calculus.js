@@ -372,7 +372,7 @@ function evalLC(term) {
             env = new Env(env).setThunk(term.name, new Tuple(lastTerm, lastEnv));
           term = term.body;
         } else { // Pass the function some other function.
-          term = lastTerm(awaitArg(term, stack, env));
+          term = lastTerm(awaitArg(term, [], env));
         }
       } else if ( term instanceof Tuple ) {
         // for primitives
