@@ -99,6 +99,7 @@ function Primitive(v) { return new Tuple(new V( "<primitive>" ), new Env([[ "<pr
 const magicFunctions = {
   trace: function(v) { return function(cont) { console.info(String(v.term)); return cont; } },
   "trace-id": function(v) { console.info(String(v.term)); return v; },
+  "trace-num": function(n) { return function(cont) { console.info(toInt(n)); return cont; } },
 }
 
 const primitives = new Env;
