@@ -231,11 +231,13 @@ function parse(code) {
     function v(i) {
       const r = name(i);
       if ( r ) {
-        const [j,name] = r;
-        if ( name==="_" )
-          return [j,new V("()")];
-        else
-          return [j,new V(name)];
+        const [j,termName] = r;
+        if ( termName==="_" ) {
+          const undef = new V("()");
+          undef.defName = name(0)[1];
+          return [j,undef];
+        } else
+          return [j,new V(termName)];
       } else
         return null;
     }
