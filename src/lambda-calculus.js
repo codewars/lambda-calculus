@@ -95,8 +95,16 @@ class Tuple {
 // Used to insert an external (JS) value into evaluation manually ( avoiding implicit number conversion )
 function Primitive(v) { return new Tuple(new V( "<primitive>" ), new Env([[ "<primitive>" , function*() { while ( true ) yield v; } () ]])); }
 
+// Debugging tools
+const magicFunctions = {
+  trace: function(v) { return function(cont) { console.info(String(v.term)); return cont; } },
+  "trace-id": function(v) { console.info(String(v.term)); return v; },
+}
+
 const primitives = new Env;
-primitives.setThunk( "trace", new Tuple( Primitive( function(v) { console.info(String(v.term)); return v; } ), new Env ) );
+for (const [name, def] of Object.entries(magicFunctions)) {
+  primitives.setThunk( name, new Tuple( Primitive( def ), new Env ) );
+}
 
 const Y = new L("f",new A(new L("x",new A(new V("f"),new A(new V("x"),new V("x")))),new L("x",new A(new V("f"),new A(new V("x"),new V("x"))))));
 
