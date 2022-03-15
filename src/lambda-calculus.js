@@ -415,9 +415,6 @@ function printStackTrace(error, term, stack) {
 
   if ( config.verbosity >= "Loquacious" )
     console.error( stack.slice(stackCutoff).reverse().map( v => `\twhile evaluating ${ v }`).join('\n') );
-
-  if ( config.verbosity >= "Verbose" )
-    console.error( stack.slice().reverse().map( v => `\twhile evaluating ${ v }`).join('\n') );
 }
 
 Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { return toInt(this); } } );
