@@ -231,11 +231,13 @@ function parse(code) {
     function v(i) {
       const r = name(i);
       if ( r ) {
-        const [j,name] = r;
-        if ( name==="_" )
-          return [j,new V("()")];
-        else
-          return [j,new V(name)];
+        const [j,termName] = r;
+        if ( termName==="_" ) {
+          const undef = new V("()");
+          undef.defName = name(0)[1];
+          return [j,undef];
+        } else
+          return [j,new V(termName)];
       } else
         return null;
     }
@@ -372,7 +374,7 @@ function evalLC(term) {
             env = new Env(env).setThunk(term.name, new Tuple(lastTerm, lastEnv));
           term = term.body;
         } else { // Pass the function some other function.
-          term = lastTerm(awaitArg(term, stack, env));
+          term = lastTerm(awaitArg(term, [], env));
         }
       } else if ( term instanceof Tuple ) {
         // for primitives
