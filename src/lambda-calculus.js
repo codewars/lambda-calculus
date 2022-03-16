@@ -400,6 +400,8 @@ function evalLC(term) {
           term = lastTerm;
           env = lastEnv;
         } else { // lastTerm is a JS function
+          if (!(lastTerm instanceof Function))
+            throw new EvalError(`LHS ${JSON.stringify(lastTerm)} of application is not a function.`)
           const res = lastTerm(term);
           if ( res.term ) {
             ({term, env} = res);
