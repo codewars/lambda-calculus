@@ -400,12 +400,6 @@ function evalLC(term) {
           term = lastTerm;
           env = lastEnv;
         } else { // lastTerm is a JS function
-          if (!(lastTerm instanceof Function)) {
-            let msg = "";
-            if (config.verbosity > "Calm")
-              msg += `LHS ${JSON.stringify(lastTerm)} of application is not a function.`;
-            throw new EvalError(msg);
-          }
           const res = lastTerm(term);
           if ( res.term ) {
             ({term, env} = res);
