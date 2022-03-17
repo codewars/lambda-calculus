@@ -417,4 +417,4 @@ function printStackTrace(error, term, stack) {
     console.error( stack.slice(stackCutoff).reverse().map( v => `\twhile evaluating ${ v }`).join('\n') );
 }
 
-Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { return toInt(this); } } );
+Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { if (this.term) return toInt(this); else return this; } } );
