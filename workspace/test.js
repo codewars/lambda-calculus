@@ -8,8 +8,8 @@ const F = _ => f => f;
 
 describe("counter", () => {
   it("fixed tests", () => {
-    assert.equal(counter(T)(T)(T)(F), 3);
-    assert.equal(counter(T)(F), 1);
-    assert.equal(counter(T)(T)(T)(T)(T)(T)(T)(F), 7);
+    assert.numEql(counter(T)(T)(T)(F), 3);
+    assert.numEql(counter(T)(F), 1);
+    assert.numEql(counter(T)(T)(T)(T)(T)(T)(T)(F), 7);
   });
 });
