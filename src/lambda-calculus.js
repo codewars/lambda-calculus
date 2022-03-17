@@ -97,9 +97,9 @@ function Primitive(v) { return new Tuple(new V( "<primitive>" ), new Env([[ "<pr
 
 // Debugging tools
 const magicFunctions = {
-  trace: function(v) { return function(cont) { console.info(String(v.term)); return cont; } },
-  "trace-id": function(v) { console.info(String(v.term)); return v; },
-  "trace-num": function(n) { return function(cont) { console.info(toInt(n)); return cont; } },
+  trace: x => y => { console.info(String(x.term)); return y; },
+  "trace-id": x => { console.info(String(x.term)); return x; },
+  "trace-num": x => y => { console.info(toInt(x)); return y; },
 }
 
 const primitives = new Env;
@@ -400,8 +400,12 @@ function evalLC(term) {
           term = lastTerm;
           env = lastEnv;
         } else { // lastTerm is a JS function
-          if (!(lastTerm instanceof Function))
-            throw new EvalError(`LHS ${JSON.stringify(lastTerm)} of application is not a function.`)
+          if (!(lastTerm instanceof Function)) {
+            let msg = "";
+            if (config.verbosity > "Calm")
+              msg += `LHS ${JSON.stringify(lastTerm)} of application is not a function.`;
+            throw new EvalError(msg);
+          }
           const res = lastTerm(term);
           if ( res.term ) {
             ({term, env} = res);
@@ -428,4 +432,4 @@ function printStackTrace(error, term, stack) {
     console.error( stack.slice(stackCutoff).reverse().map( v => `\twhile evaluating ${ v }`).join('\n') );
 }
 
-Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { if (this.term) return toInt(this); } } );
+Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { if (this.term) return toInt(this); else return this; } } );
