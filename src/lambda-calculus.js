@@ -133,7 +133,9 @@ export function fromInt(n) {
 export function toInt(term) {
   try {
     if ( config.numEncoding === "Church" ) {
-      return term ( x => x+1 ) ( Primitive(0) );
+      const succ = x => x+1 ;
+      const result = term ( succ ) ;
+      return result ( result === succ ? 0 : Primitive(0) );
     } else if ( config.numEncoding === "Scott" ) {
       let result = 0, evaluating = true;
       while ( evaluating )
@@ -229,8 +231,13 @@ function parse(code) {
     function v(i) {
       const r = name(i);
       if ( r ) {
-        const [j,name] = r;
-        return [j,new V(name)];
+        const [j,termName] = r;
+        if ( termName==="_" ) {
+          const undef = new V("()");
+          undef.defName = name(0)[1];
+          return [j,undef];
+        } else
+          return [j,new V(termName)];
       } else
         return null;
     }
@@ -323,7 +330,10 @@ function evalLC(term) {
       let argEnv;
       if ( arg?.term && arg?.env ) ({ term: arg, env: argEnv } = arg); // if callback is passed another callback, or a term
       const termVal = new Tuple( typeof arg === 'number' ? fromInt(arg) : arg , new Env(argEnv) );
-      return runEval( new Tuple(term.body, new Env(env).setThunk(term.name, termVal)), stack );
+      if ( term.name==="_" )
+        return runEval( new Tuple(term.body, new Env(env)), stack );
+      else
+        return runEval( new Tuple(term.body, new Env(env).setThunk(term.name, termVal)), stack );
     }
     return Object.assign( result, {term,env} );
   }
@@ -364,7 +374,7 @@ function evalLC(term) {
             env = new Env(env).setThunk(term.name, new Tuple(lastTerm, lastEnv));
           term = term.body;
         } else { // Pass the function some other function.
-          term = lastTerm(awaitArg(term, stack, env));
+          term = lastTerm(awaitArg(term, [], env));
         }
       } else if ( term instanceof Tuple ) {
         // for primitives
@@ -404,9 +414,6 @@ function printStackTrace(error, term, stack) {
 
   if ( config.verbosity >= "Loquacious" )
     console.error( stack.slice(stackCutoff).reverse().map( v => `\twhile evaluating ${ v }`).join('\n') );
-
-  if ( config.verbosity >= "Verbose" )
-    console.error( stack.slice().reverse().map( v => `\twhile evaluating ${ v }`).join('\n') );
 }
 
-Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { return toInt(this); } } );
+Object.defineProperty( Function.prototype, "valueOf", { value: function valueOf() { if (this.term) return toInt(this); else return this; } } );
