@@ -382,10 +382,9 @@ function evalLC(term) {
           env = lastEnv;
         } else { // lastTerm is a JS function
           const res = lastTerm(term);
-          if ( res.term ) {
-            ({term, env} = res);
-            if ( ! env ) env = new Env;
-          } else
+          if ( res?.term )
+            ( {term, env=new Env} = res );
+          else
             term = res;
         }
       }
