@@ -48,17 +48,19 @@ curry  = \ fn xy  . xy fn
 
 # data Number = End | Even Number | Odd Number
 
-zero = \ end _even _odd . end
+# zero = \ end _even _odd . end
 
 shiftR0 = \ n . \ _end even _odd . even n # mind that a shiftR in LE is a multiplication
 shiftR1 = \ n . \ _end _even odd . odd  n # mind that a shiftR in LE is a multiplication
-shiftL  = \ n . n n I I                   # mind that a shiftL in LE is a division
+shiftL  = \ n . n 0 I I                   # mind that a shiftL in LE is a division
+
+dbl = \ n . n 0 (K (shiftR0 n)) (K (shiftR0 n))
 
 isStrictZero = \ n . n True (K False) (K False) # disallow padding zeroes # O(1)
 isZero       = \ n . n True    isZero (K False) #    allow padding zeroes # amortised O(2), so don't worry too much
 
-pad = \ n . n (shiftR0 zero) (B shiftR0 pad) (B shiftR1 pad)
-unpad = \ n . n zero ( \ z . ( \ unpadZ . isStrictZero unpadZ (shiftR0 unpadZ) zero ) (unpad z) ) (B shiftR1 unpad)
+pad = \ n . n (shiftR0 0) (B shiftR0 pad) (B shiftR1 pad)
+unpad = \ n . n 0 ( \ z . ( \ unpadZ . isStrictZero unpadZ (shiftR0 unpadZ) 0 ) (unpad z) ) (B shiftR1 unpad)
 isPadded = \ n . n False ( \ z . z True (K (isPadded z)) (K (isPadded z)) ) isPadded
 
 # instance Ord
@@ -75,26 +77,27 @@ gt = \ m n . compare m n False False True
 
 # instance Enum
 
-succ = \ n . n (shiftR1 zero) shiftR1 (B shiftR0 succ)
+succ = \ n . n 1 shiftR1 (B shiftR0 succ)
 
-go = \ prefix n . n zero
+go = \ prefix n . n 0
                     (go (B prefix shiftR1))
                     ( \ z . z (prefix z) (K (prefix (shiftR0 z))) (K (prefix (shiftR0 z))) )
-pred = go I
+pred = go I                           #    allow padding zeroes
+pred = \ n . n 0 (B shiftR1 pred) dbl # disallow padding zeroes
 
 # instance Bits
 
-bitAnd = \ m n . m m
-                   ( \ zm . n n (B shiftR0 (bitAnd zm)) (B shiftR0 (bitAnd zm)) )
-                   ( \ zm . n n (B shiftR0 (bitAnd zm)) (B shiftR1 (bitAnd zm)) )
+bitAnd = \ m n . m 0
+                   ( \ zm . n 0 (B dbl (bitAnd zm)) (B     dbl (bitAnd zm)) )
+                   ( \ zm . n 0 (B dbl (bitAnd zm)) (B shiftR1 (bitAnd zm)) )
 
 bitOr = \ m n . m n
                   ( \ zm . n (shiftR0 zm) (B shiftR0 (bitOr zm)) (B shiftR1 (bitOr zm)) )
                   ( \ zm . n (shiftR1 zm) (B shiftR1 (bitOr zm)) (B shiftR1 (bitOr zm)) )
     
 bitXor = \ m n . m n
-    ( \ zm . n (shiftR0 zm) (B shiftR0 (bitXor zm)) (B shiftR1 (bitXor zm)) )
-    ( \ zm . n (shiftR1 zm) (B shiftR1 (bitXor zm)) (B shiftR0 (bitXor zm)) )
+                   ( \ zm . n (    dbl zm) (B     dbl (bitXor zm)) (B shiftR1 (bitXor zm)) )
+                   ( \ zm . n (shiftR1 zm) (B shiftR1 (bitXor zm)) (B     dbl (bitXor zm)) )
 
 testBit = \ i n . isZero i
                     (n False (testBit (pred i)) (testBit (pred i)))
@@ -102,7 +105,7 @@ testBit = \ i n . isZero i
 
 bit = \ i . isZero i (shiftR0 (bit (pred i))) (succ i)
 
-popCount = \ n . n n popCount (B succ popCount)
+popCount = \ n . n 0 popCount (B succ popCount)
 
 even = \ n . n True  (K True)  (K False)
 odd  = \ n . n False (K False) (K True)
@@ -113,32 +116,37 @@ plus = \ m n . m n
                  ( \ zm . n (shiftR0 zm) (B shiftR0 (plus zm)) (B shiftR1 (plus zm)) )
                  ( \ zm . n (shiftR1 zm) (B shiftR1 (plus zm)) (B shiftR0 (B succ (plus zm))) )
 
-times = \ m n . m m
-                ( \ zm . n n
+times = \ m n . m 0
+                ( \ zm . n 0
                            ( \ zn . shiftR0 (shiftR0 (times zm zn)) )
                            ( \ zn . shiftR0 (times zm (shiftR1 zn)) )
                 )
-                ( \ zm . n n
+                ( \ zm . n 0
                            ( \ zn . shiftR0 (times (shiftR1 zm) zn) )
                            ( \ zn . plus (shiftR1 zn) (shiftR0 (times zm (shiftR1 zn))) )
                 )
 
-unsafeMinus = \ m n . m zero
+unsafeMinus = \ m n . m 0
                         ( \ zm . n (shiftR0 zm) (B shiftR0 (unsafeMinus zm)) (B shiftR1 (B pred (unsafeMinus zm))) )
                         ( \ zm . n (shiftR1 zm) (B shiftR1 (unsafeMinus zm)) (B shiftR0 (unsafeMinus zm)) )
 # needs explicit unpad or will litter padding
-minus = \ m n . gt m n zero (unpad (unsafeMinus m n))
+minus = \ m n . gt m n 0 (unpad (unsafeMinus m n))
+# this should solve the littering
+go = \ m n . m 0
+               ( \ zm . n m (B     dbl (go zm)) (B shiftR1 (B pred (go zm))) )
+               ( \ zm . n m (B shiftR1 (go zm)) (B dbl (go zm)) )
+minus = \ m n . gt m n 0 (go m n)
 
 until = \ p fn x . p x (until p fn (fn x)) x
-divMod = \ m n . until (B (lt m) snd) (bimap succ shiftR0) (Pair zero n)
+divMod = \ m n . until (B (lt m) snd) (bimap succ shiftR0) (Pair 0 n)
                  \ steps nn . isZero steps
                                 (divMod (minus m (shiftL nn)) n (B Pair (plus (bit (pred steps)))))
-                                (Pair zero m)
+                                (Pair 0 m)
 div = \ m n . fst (divMod m n)
 mod = \ m n . snd (divMod m n)
 
 square = W times
-pow = \ m n . n (shiftR1 zero)
+pow = \ m n . n 1
                 (B square (pow m))
                 (B (times m) (B square (pow m)))
 
@@ -152,7 +160,7 @@ gcd = \ m n . m n
                                      (gcd (minus m n) n)
                            )
                 )
-lcm = \ m n . ( \ g . isZero g (times (div m g) n) g ) (gcd m n)
+lcm = \ m n . T (gcd m n) \ g . isZero g (times (div m g) n) g
 
 min = \ m n . le m n n m
 max = \ m n . le m n m n

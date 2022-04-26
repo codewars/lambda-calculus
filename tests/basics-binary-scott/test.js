@@ -11,7 +11,7 @@ const {fromInt,toInt} = LC;
 const {False,True,not,and,or,xor,implies} = solution;
 const {LT,EQ,GT,compare,lt,le,eq,ge,gt} = solution;
 const {Pair,fst,snd,first,second,both,bimap,curry} = solution;
-const {zero,shiftR0,shiftR1,shiftL,isStrictZero,isZero,pad,unpad,isPadded} = solution;
+const {shiftR0,shiftR1,shiftL,dbl,isStrictZero,isZero,pad,unpad,isPadded} = solution;
 const {succ,pred} = solution;
 const {bitAnd,bitOr,bitXor,testBit,bit,popCount,even,odd} = solution;
 const {plus,times,minus,divMod,div,mod,pow,gcd,lcm,min,max} = solution;
@@ -26,11 +26,12 @@ describe("Binary Scott tests",function(){
   this.timeout(0);
   it("enumeration",()=>{
     LC.configure({ purity: "LetRec", numEncoding: "BinaryScott" });
-    const one   = succ(zero)
-    const two   = succ(one)
-    const three = succ(two)
-    const four  = succ(three)
-    const five  = succ(four)
+    const zero  = end => _odd => _even => end ;
+    const one   = succ(zero);
+    const two   = succ(one);
+    const three = succ(two);
+    const four  = succ(three);
+    const five  = succ(four);
     assert.equal( toString(zero), "$" );
     assert.equal( toString(one), "1$" );
     assert.equal( toString(two), "01$" );
@@ -39,10 +40,10 @@ describe("Binary Scott tests",function(){
     assert.equal( toString(five), "101$" );
     assert.equal( toString(five), "101$" );
     assert.equal( toString(pred(five)), "001$" );
-    assert.equal( toString(unpad(pred(pred(five)))), "11$" );
-    assert.equal( toString(unpad(pred(pred(pred(five))))), "01$" );
-    assert.equal( toString(unpad(pred(pred(pred(pred(five)))))), "1$" );
-    assert.equal( toString(unpad(pred(pred(pred(pred(pred(five))))))), "$" );
+    assert.equal( toString(pred(pred(five))), "11$" );
+    assert.equal( toString(pred(pred(pred(five)))), "01$" );
+    assert.equal( toString(pred(pred(pred(pred(five))))), "1$" );
+    assert.equal( toString(pred(pred(pred(pred(pred(five)))))), "$" );
   });
   it("successor",()=>{
     let n = 0;
@@ -58,15 +59,16 @@ describe("Binary Scott tests",function(){
       assert.equal( n, i );
     }
   });
-  it("predecessor robustness",()=>{
-    assert.equal( toString( pred ( 2 ) ), "1$" );
-    assert.equal( toString( pred ( end => even => odd => end ) ), "$" );
-    assert.equal( toString( pred ( end => even => odd => even (
-                                   end => even => odd => end ) ) ), "$" );
-    assert.equal( toString( pred ( end => even => odd => even (
-                                   end => even => odd => even (
-                                   end => even => odd => end ) ) ) ), "$" );
-  });
+  // enforcing the invariant means pred robustness is overrated
+  // it("predecessor robustness",()=>{
+  //   assert.equal( toString( pred ( 2 ) ), "1$" );
+  //   assert.equal( toString( pred ( end => even => odd => end ) ), "$" );
+  //   assert.equal( toString( pred ( end => even => odd => even (
+  //                                  end => even => odd => end ) ) ), "$" );
+  //   assert.equal( toString( pred ( end => even => odd => even (
+  //                                  end => even => odd => even (
+  //                                  end => even => odd => end ) ) ) ), "$" );
+  // });
   it("ordering",()=>{
     for ( let i=1; i<=100; i++ ) {
       const m = rnd(i*i), n = rnd(i*i);
@@ -144,7 +146,7 @@ describe("Binary Scott tests",function(){
     for ( let i=1; i<=100; i++ ) {
       const n = rnd(i*i);
       assert.equal( shiftL (n), n >> 1 );
-      assert.equal( shiftR0 (n), n << 1 );
+      assert.equal( dbl (n), n << 1 );
       assert.equal( shiftR1 (n), n << 1 | 1 );
     }
   });
