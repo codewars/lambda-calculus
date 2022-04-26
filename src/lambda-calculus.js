@@ -19,6 +19,7 @@ Kacarott - https://github.com/Kacarott
 const config = { verbosity: "Calm"    //  Calm | Concise | Loquacious | Verbose
                , purity: "PureLC"     //  Let | LetRec | PureLC
                , numEncoding: "None"  //  None | Church | Scott | BinaryScott
+               , enforceBinaryScottInvariant: true  //  Boolean
                };
 
 export function configure(cfg={}) { return Object.assign(config,cfg); }
@@ -93,7 +94,7 @@ class Tuple {
 }
 
 // Used to insert an external (JS) value into evaluation manually ( avoiding implicit number conversion )
-function Primitive(v) { return new Tuple(new V( "<primitive>" ), new Env([[ "<primitive>" , function*() { while ( true ) yield v; } () ]])); }
+export function Primitive(v) { return new Tuple(new V( "<primitive>" ), new Env([[ "<primitive>" , function*() { while ( true ) yield v; } () ]])); }
 
 const primitives = new Env;
 primitives.setThunk( "trace", new Tuple( Primitive( function(v) { console.info(String(v.term)); return v; } ), new Env ) );
@@ -130,6 +131,8 @@ export function fromInt(n) {
     return config.numEncoding.fromInt(n); // Custom encoding
 }
 
+const isPadded = n => n (false) ( z => z (true) ( () => isPadded(z) ) ( () => isPadded(z) ) ) (isPadded) ; // check invariant for BinaryScott number
+
 export function toInt(term) {
   try {
     if ( config.numEncoding === "Church" ) {
@@ -142,16 +145,22 @@ export function toInt(term) {
         term ( () => evaluating = false ) ( n => () => { term = n; result++ } ) ();
       return result;
     } else if ( config.numEncoding === "BinaryScott" ) {
+      const throwOnPadding = config.enforceBinaryScottInvariant && isPadded(term);
       let result = 0, bit = 1, evaluating = true;
       while ( evaluating )
         term ( () => evaluating = false ) ( n => () => { term = n; bit *= 2 } ) ( n => () => { term = n; result += bit; bit *= 2 } ) ();
+      if ( throwOnPadding ) {
+        if ( config.verbosity >= "Concise" ) console.error(`toInt: Binary Scott number ${ result } has zero-padding`);
+        throw new TypeError(`toInt: Binary Scott number violates invariant`);
+      }
       return result;
     } else if ( config.numEncoding === "None" )
       return term;
     else
       return config.numEncoding.toInt(term); // Custom encoding
   } catch (e) {
-    if ( config.verbosity >= "Concise" ) console.error(`toInt: ${ term } is not a number in numEncoding ${ config.numEncoding }`);
+    if ( ! e.message.startsWith("toInt:") && config.verbosity >= "Concise" )
+      console.error(`toInt: ${ term } is not a number in numEncoding ${ config.numEncoding }`);
     throw e;
   }
 }
