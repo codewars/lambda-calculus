@@ -58,7 +58,7 @@ class A {
     this.left = left;
     this.right = right;
   }
-  free() { return union( this.left.free?.() ?? [] , this.right.free?.() ?? [] ); }
+  free() { return union( this.left.free?.() || [] , this.right.free?.() || [] ); }
   toString() {
     const left = this.left instanceof L ? `(${this.left})` : this.left ;
     const right = this.right instanceof V ? this.right : `(${this.right})` ;
