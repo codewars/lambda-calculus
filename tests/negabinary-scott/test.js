@@ -15,7 +15,7 @@ const toInt = n => {
   else
     return unsafeToInt(n);
 } ;
-LC.configure({ purity: "LetRec", numEncoding: { fromInt, toInt }, verbosity: "WConcise" });
+LC.configure({ purity: "LetRec", numEncoding: { fromInt, toInt }, verbosity: "Concise" });
 
 const solutionText = readFileSync(new URL("./solution.lc", import.meta.url), {encoding: "utf8"});
 const solution = LC.compile(solutionText);
