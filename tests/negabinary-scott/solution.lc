@@ -1,0 +1,91 @@
+#debug
+
+#import combinators.lc
+B = \ f g x . f (g x)
+C = \ f x y . f y x
+K = \ x _ . x
+T = \ x f . f x
+Y = \ f . ( \ x . f (x x) ) ( \ x . f (x x) )
+
+#import church-boolean.lc
+True  = \ true _false . true
+False = \ _true false . false
+
+#import church-ordering.lc
+LT = \ lt _eq _gt . lt
+EQ = \ _lt eq _gt . eq
+GT = \ _lt _eq gt . gt
+
+#import scott-pair.lc
+Pair = \ x y f . f x y
+fst = \ xy . xy \ x _y . x
+snd = \ xy . xy \ _x y . y
+bimap = \ fn xy . xy \ x y . Pair (fn x) (fn y)
+Y2 = B Y (C (B bimap T))
+
+#import scott-triple.lc
+Triple = \ x y z f . f x y z
+fst3 = \ xyz . xyz \ x _y _z . x
+snd3 = \ xyz . xyz \ _x y _z . y
+thd3 = \ xyz . xyz \ _x _y z . z
+trimap = \ fn xyz . xyz \ x y z . Triple (fn x) (fn y) (fn z)
+Y3 = B Y (C (B trimap T))
+
+#import scott-quad.lc
+Quad = \ w x y z f . f w x y z
+fst4 = \ wxyz . wxyz \ w _x _y _z . w
+snd4 = \ wxyz . wxyz \ _w x _y _z . x
+thd4 = \ wxyz . wxyz \ _w _x y _z . y
+fth4 = \ wxyz . wxyz \ _w _x _y z . z
+quadmap = \ fn wxyz . wxyz \ w x y z . Quad (fn w) (fn x) (fn y) (fn z)
+Y4 = B Y (C (B quadmap T))
+
+#export scott-negabinary-number.lc
+
+# NegaBinary = Zero | Bit0 NegaBinary | Bit1 NegaBinary
+
+Bit0 = \ n . \ _end even _odd . even n
+Bit1 = \ n . \ _end _even odd . odd  n
+
+nega-dbl = \ n . n 0 (K (Bit0 n)) (K (Bit0 n))
+
+Enum = Y2 (Pair (T \ succ pred . \ m . m  1 Bit1 (B nega-dbl pred)) # succ
+                (T \ succ pred . \ m . m -1 (B Bit1 succ) nega-dbl) # pred
+          )
+succ = fst Enum
+pred = snd Enum
+
+Num = Y3 (Triple (T \ add adc adb .
+                    \ m n . m n        # add
+                              ( \ zm . n m ( \ zn . nega-dbl (add zm zn) ) ( \ zn . Bit1 (add zm zn) ) )
+                              ( \ zm . n m ( \ zn . Bit1 (add zm zn) ) ( \ zn . nega-dbl (adb zm zn) ) )
+                 )
+                 (T \ add adc adb .
+                    \ m n . m (succ n) # add-with-carry
+                              ( \ zm . n (succ m) ( \ zn . Bit1 (add zm zn) ) ( \ zn . nega-dbl (adb zm zn) ) )
+                              ( \ zm . n (succ m) ( \ zn . nega-dbl (adb zm zn) ) ( \ zn . Bit1 (adb zm zn) ) )
+                 )
+                 (T \ add adc adb .
+                    \ m n . m (pred n) # add-with-borrow
+                              ( \ zm . n (pred m) ( \ zn . Bit1 (adc zm zn) ) ( \ zn . nega-dbl (add zm zn) ) )
+                              ( \ zm . n (pred m) ( \ zn . nega-dbl (add zm zn) ) ( \ zn . Bit1 (add zm zn) ) )
+         )       )
+add = fst3 Num
+adc = snd3 Num
+adb = thd3 Num
+
+negate = \ n . add n (nega-dbl n)
+sub = \ m n . add m (negate n)
+zero = \ n . n True (K False) (K False)
+
+Ord = Y4 (Quad (T \ lt0 le0 ge0 gt0 . \ n . n False gt0 gt0) # lt0
+               (T \ lt0 le0 ge0 gt0 . \ n . n True  ge0 gt0) # le0
+               (T \ lt0 le0 ge0 gt0 . \ n . n True  le0 le0) # ge0
+               (T \ lt0 le0 ge0 gt0 . \ n . n False lt0 le0) # gt0
+         )
+lt0 = fst4 Ord
+le0 = snd4 Ord
+ge0 = thd4 Ord
+gt0 = fth4 Ord
+
+compare = \ m n . T (sub m n) \ d . zero d EQ (lt0 d LT GT) # church boolean

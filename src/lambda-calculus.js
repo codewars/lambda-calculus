@@ -58,7 +58,7 @@ class A {
     this.left = left;
     this.right = right;
   }
-  free() { return union(this.left.free(),this.right.free()); }
+  free() { return union( this.left.free?.() ?? [] , this.right.free?.() ?? [] ); }
   toString() {
     const left = this.left instanceof L ? `(${this.left})` : this.left ;
     const right = this.right instanceof V ? this.right : `(${this.right})` ;
@@ -271,13 +271,25 @@ function parse(code) {
     function a(i) {
       let q, r = [];
       let j = i;
-      while ( q = paren_d(term)(j) || l(j) || v(j) || n(j) ) {
+      while ( q = paren_d(term)(j) || l(j) || v(j) || n(j) || negative(n)(j) ) {
         [j,q] = q;
         r.push(q);
       }
       if ( r.length )
         return [ j, r.reduce( (z,term) => new A(z,term) ) ];
       else
+        return null;
+    }
+    const negative = number => function(i) {
+      const j = expect('-')(i);
+      if ( j ) {
+        const q = number(j);
+        if ( q ) {
+          const [k,r] = q;
+          return [k,fromInt(-toInt(r))];
+        } else
+          error(j,"negative: expected a number literal")
+      } else
         return null;
     }
     const paren_d = inner => function(i) {
