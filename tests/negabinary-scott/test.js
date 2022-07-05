@@ -15,7 +15,7 @@ const toInt = n => {
   else
     return unsafeToInt(n);
 } ;
-LC.configure({ purity: "LetRec", numEncoding: { fromInt, toInt }, verbosity: "Concise" });
+LC.configure({ purity: "LetRec", numEncoding: { fromInt, toInt } });
 
 const solutionText = readFileSync(new URL("./solution.lc", import.meta.url), {encoding: "utf8"});
 const solution = LC.compile(solutionText);
@@ -27,6 +27,7 @@ const toOrdering = cmp => cmp ("LT") ("EQ") ("GT") ;
 
 describe("NegaBinaryScott", () => {
   it("numbers", () => {
+    LC.configure({ purity: "LetRec", numEncoding: { fromInt, toInt } });
     for ( let n=-10; n<=10; n++ )
       assert.strictEqual( toInt(fromInt(n)), n, `toInt (fromInt ${ n })` );
   });
