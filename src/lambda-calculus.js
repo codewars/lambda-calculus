@@ -233,7 +233,7 @@ function parse(code) {
       if ( digits.test(code[i]) ) {
         let j = i+1;
         while ( digits.test(code[j]) ) j++;
-        return [sp(j),fromInt(Number(code.slice(i,j)))];
+        return [ sp(j), fromInt(Number(code.slice(i,j))), Number(code.slice(i,j)) ]; // return JS number in addition to LC number // negative uses this
       } else
         return null;
     }
@@ -285,8 +285,8 @@ function parse(code) {
       if ( j ) {
         const q = number(j);
         if ( q ) {
-          const [k,r] = q;
-          return [k,fromInt(-toInt(r))];
+          const [k,,r] = q; // act on the JS number instead of the LC number
+          return [k,fromInt(-r)];
         } else
           error(j,"negative: expected a number literal")
       } else
