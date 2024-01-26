@@ -42,7 +42,7 @@ class L {
     this.body = body;
   }
   free() {
-    const r = this.body.free();
+    const r = this.body.free?.() || new Set ;
     r.delete(this.name);
     return r;
   }
@@ -169,7 +169,7 @@ export function toInt(term) {
 function parse(code) {
   function parseTerm(env,code) {
     function wrap(name,term) {
-      const FV = term.free(); FV.delete("()");
+      const FV = term.free?.() || new Set ; FV.delete("()");
       if ( config.purity === "Let" )
         return Array.from(FV).reduce( (tm,nm) => {
           if ( env.has(nm) ) {
