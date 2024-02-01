@@ -20,7 +20,6 @@ LC.configure({ purity: "LetRec", numEncoding: { fromInt, toInt } });
 const solutionText = readFileSync(new URL("./solution.lc", import.meta.url), {encoding: "utf8"});
 const solution = LC.compile(solutionText);
 const { succ,pred, add,negate,sub, zero, lt0,le0,ge0,gt0,compare } = solution;
-const { True,False, LT,EQ,GT } = solution;
 
 const toBoolean = p => p (true) (false) ;
 const toOrdering = cmp => cmp ("LT") ("EQ") ("GT") ;
@@ -33,46 +32,41 @@ describe("NegaBinaryScott", () => {
   });
   it("succ", () => {
     for ( let n=-10; n<=10; n++ )
-      assert.strictEqual( toInt(succ(fromInt(n))), n+1, `succ ${ n }` );
-      // assert.strictEqual( toInt(pred(fromInt(n))), n-1, `pred ${ n }` );
+      assert.strictEqual( toInt(succ(n)), n+1, `succ ${ n }` );
   });
   it("pred", () => {
     for ( let n=-10; n<=10; n++ )
-      // assert.strictEqual( toInt(succ(fromInt(n))), n+1, `succ ${ n }` ),
-      assert.strictEqual( toInt(pred(fromInt(n))), n-1, `pred ${ n }` );
+      assert.strictEqual( toInt(pred(n)), n-1, `pred ${ n }` );
   });
   it("add", () => {
     for ( let m=-10; m<=10; m++ )
-      for ( let n=-10; n<=10; n++ ) {
-        const actual = toInt(add(fromInt(m))(fromInt(n)));
-        assert.strictEqual(actual,m+n,`add ${ m } ${ n }`);
-      }
+      for ( let n=-10; n<=10; n++ )
+        assert.strictEqual( toInt(add(m)(n)), m+n, `add ${ m } ${ n }` );
   });
   it("negate", () => {
     for ( let n=-10; n<=10; n++ )
-      assert.strictEqual( toInt(negate(fromInt(n))), -n, `negate ${ n }` );
+      assert.strictEqual( toInt(negate(n)), -n, `negate ${ n }` );
+  });
+  it("negate . negate", () => {
+    for ( let n=-10; n<=10; n++ )
+      assert.strictEqual( toInt(negate(negate(n))), n, `negate (negate ${ n })` );
   });
   it("sub", () => {
     for ( let m=-10; m<=10; m++ )
-      for ( let n=-10; n<=10; n++ ) {
-        const actual = toInt(sub(fromInt(m))(fromInt(n)));
-        assert.strictEqual(actual,m-n,`sub ${ m } ${ n }`);
-      }
+      for ( let n=-10; n<=10; n++ )
+        assert.strictEqual( toInt(sub(m)(n)), m-n, `sub ${ m } ${ n }` );
   });
   it("eq, uneq", () => {
     for ( let n=-10; n<=10; n++ )
-      assert.equal(toBoolean(zero(fromInt(n))),n===0,`zero ${ n }`),
-      assert.equal(toBoolean(lt0(fromInt(n))),n<0,`lt0 ${ n }`),
-      assert.equal(toBoolean(le0(fromInt(n))),n<=0,`le0 ${ n }`),
-      assert.equal(toBoolean(ge0(fromInt(n))),n>=0,`ge0 ${ n }`),
-      assert.equal(toBoolean(gt0(fromInt(n))),n>0,`gt0 ${ n }`);
+      assert.strictEqual(toBoolean(zero(n)),n===0,`zero ${ n }`),
+      assert.strictEqual(toBoolean(lt0(n)),n<0,`lt0 ${ n }`),
+      assert.strictEqual(toBoolean(le0(n)),n<=0,`le0 ${ n }`),
+      assert.strictEqual(toBoolean(ge0(n)),n>=0,`ge0 ${ n }`),
+      assert.strictEqual(toBoolean(gt0(n)),n>0,`gt0 ${ n }`);
   });
   it("compare", () => {
     for ( let m=-10; m<=10; m++ )
-      for ( let n=-10; n<=10; n++ ) {
-        const actual = toOrdering(compare(fromInt(m))(fromInt(n)));
-        const expected = m > n ? "GT" : m < n ? "LT" : "EQ" ;
-        assert.equal(actual,expected,`compare ${ m } ${ n }`);
-      }
+      for ( let n=-10; n<=10; n++ )
+        assert.strictEqual( toOrdering(compare(m)(n)), m > n ? "GT" : m < n ? "LT" : "EQ" , `compare ${ m } ${ n }` );
   });
 });
