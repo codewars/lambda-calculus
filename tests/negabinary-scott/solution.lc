@@ -23,14 +23,6 @@ snd = \ xy . xy \ _x y . y
 bimap = \ fn xy . xy \ x y . Pair (fn x) (fn y)
 Y2 = B Y (C (B bimap T))
 
-#import scott-triple.lc
-Triple = \ x y z f . f x y z
-fst3 = \ xyz . xyz \ x _y _z . x
-snd3 = \ xyz . xyz \ _x y _z . y
-thd3 = \ xyz . xyz \ _x _y z . z
-trimap = \ fn xyz . xyz \ x y z . Triple (fn x) (fn y) (fn z)
-Y3 = B Y (C (B trimap T))
-
 #import scott-quad.lc
 Quad = \ w x y z f . f w x y z
 fst4 = \ wxyz . wxyz \ w _x _y _z . w
@@ -55,24 +47,9 @@ Enum = Y2 (Pair (T \ succ pred . \ m . m  1 Bit1 (B nega-dbl pred)) # succ
 succ = fst Enum
 pred = snd Enum
 
-Num = Y3 (Triple (T \ add adc adb .
-                    \ m n . m n        # add
-                              ( \ zm . n m ( \ zn . nega-dbl (add zm zn) ) ( \ zn . Bit1 (add zm zn) ) )
-                              ( \ zm . n m ( \ zn . Bit1 (add zm zn) ) ( \ zn . nega-dbl (adb zm zn) ) )
-                 )
-                 (T \ add adc adb .
-                    \ m n . m (succ n) # add-with-carry
-                              ( \ zm . n (succ m) ( \ zn . Bit1 (add zm zn) ) ( \ zn . nega-dbl (adb zm zn) ) )
-                              ( \ zm . n (succ m) ( \ zn . nega-dbl (adb zm zn) ) ( \ zn . Bit1 (adb zm zn) ) )
-                 )
-                 (T \ add adc adb .
-                    \ m n . m (pred n) # add-with-borrow
-                              ( \ zm . n (pred m) ( \ zn . Bit1 (adc zm zn) ) ( \ zn . nega-dbl (add zm zn) ) )
-                              ( \ zm . n (pred m) ( \ zn . nega-dbl (add zm zn) ) ( \ zn . Bit1 (add zm zn) ) )
-         )       )
-add = fst3 Num
-adc = snd3 Num
-adb = thd3 Num
+add = \ m n . m n
+                ( \ zm . n m ( \ zn . nega-dbl (add zm zn) ) ( \ zn . Bit1 (add zm zn) ) )
+                ( \ zm . n m ( \ zn . Bit1 (add zm zn) ) ( \ zn . nega-dbl (pred (add zm zn)) ) )
 
 negate = \ n . add n (nega-dbl n)
 sub = \ m n . add m (negate n)
