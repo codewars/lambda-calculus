@@ -345,16 +345,16 @@ export function compile(code) {
 function evalLC(term) {
 
   // builds function to return to user ( representing an abstraction awaiting input )
-  function awaitArg(term, stack, env) {
+  function awaitArg(term, env) {
     // callback function which will evaluate term.body in an env with the input
     function result(arg) {
       let argEnv;
       if ( arg?.term && arg?.env ) ({ term: arg, env: argEnv } = arg); // if callback is passed another callback, or a term
       const termVal = new Tuple( typeof arg === 'number' ? fromInt(arg) : arg , new Env(argEnv) );
       if ( term.name==="_" )
-        return runEval( new Tuple(term.body, new Env(env)), stack );
+        return runEval( new Tuple(term.body, new Env(env)) );
       else
-        return runEval( new Tuple(term.body, new Env(env).setThunk(term.name, termVal)), stack );
+        return runEval( new Tuple(term.body, new Env(env).setThunk(term.name, termVal)) );
     }
     return Object.assign( result, {term,env} );
   }
@@ -363,8 +363,8 @@ function evalLC(term) {
   // isRight :: bool (indicating whether the term is left or right side of an Application)
   // isEvaluated :: bool (indicating whether the current term should be stored in the Env)
   // callstack :: [String] (History of var lookups, for better error messages)
-  function runEval({term,env},stack) { // stack: [[term, isRight, isEvaluated]], term: LC term, env = Env { name => term }
-    const callstack = []; // Does not persist between requests for arguments
+  function runEval({term,env}) { // stack: [[term, isRight, isEvaluated]], term: LC term, env = Env { name => term }
+    const callstack = [], stack = []; // Does not persist between requests for arguments
     while ( ! ( term instanceof L ) || stack.length > 0 ) {
       if ( term instanceof V )
         if ( term.name==="()" )
@@ -377,7 +377,7 @@ function evalLC(term) {
           else {
             if (res.term instanceof V || res.term instanceof A)
               // Push a frame to the stack to indicate when the value should be stored back
-              stack.push( [new Tuple( term, env ), false, true ] );
+              stack.push( [new Tuple( term, env ), true, true ] );
             ({term, env} = res);
           }
         }
@@ -395,7 +395,7 @@ function evalLC(term) {
             env = new Env(env).setThunk(term.name, new Tuple(lastTerm, lastEnv));
           term = term.body;
         } else { // Pass the function some other function.
-          term = lastTerm(awaitArg(term, [], env));
+          term = lastTerm(awaitArg(term, env));
         }
       } else if ( term instanceof Tuple ) {
         // for primitives
@@ -421,9 +421,9 @@ function evalLC(term) {
       }
     }
     // We need input
-    return awaitArg(term, stack, env);
+    return awaitArg(term, env);
   }
-  return runEval(term, []);
+  return runEval(term);
 }
 
 // Print an error, with stack trace according to verbosity level
