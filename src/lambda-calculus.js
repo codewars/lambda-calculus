@@ -221,10 +221,12 @@ function parse(code) {
     function name(i) {
       if ( code[i]==='_' ) {
         while ( identifierChars.test( code[i] || "" ) ) i++;
+        if ( code[i]==='?' ) i++;
         return [sp(i),"_"];
       } else if ( letters.test( code[i] || "" ) ) {
         let j = i+1;
         while ( identifierChars.test( code[j] || "" ) ) j++;
+        if ( code[j]==='?' ) j++;
         return [sp(j),code.slice(i,j)];
       } else
         return null;
