@@ -50,9 +50,13 @@ pred = snd Enum
 add = \ m n . m n
                 ( \ zm . n m ( \ zn . nega-dbl (add zm zn) ) ( \ zn . Bit1 (add zm zn) ) )
                 ( \ zm . n m ( \ zn . Bit1 (add zm zn) ) ( \ zn . nega-dbl (pred (add zm zn)) ) )
+mul = \ m n . m 0
+                ( \ zm . n 0 ( \ zn . Bit0 (Bit0 (mul zm zn)) ) ( \ _z . Bit0 (mul zm n) ) )
+                ( \ zm . n 0 ( \ zn . Bit0 (mul m zn) ) ( \ zn . Bit1 (add (nega-dbl (mul zm zn)) (add zm zn)) ) )
 
 negate = \ n . add n (nega-dbl n)
 sub = \ m n . add m (negate n)
+dbl = \ m . m 0 ( \ n . Bit0 (dbl n) ) ( \ n . nega-dbl (pred (dbl n)) )
 zero = \ n . n True (K False) (K False)
 
 Ord = Y4 (Quad (T \ lt0 le0 ge0 gt0 . \ n . n False gt0 gt0) # lt0

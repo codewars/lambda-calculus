@@ -19,7 +19,7 @@ LC.configure({ purity: "LetRec", numEncoding: { fromInt, toInt } });
 
 const solutionText = readFileSync(new URL("./solution.lc", import.meta.url), {encoding: "utf8"});
 const solution = LC.compile(solutionText);
-const { succ,pred, add,negate,sub, zero, lt0,le0,ge0,gt0,compare } = solution;
+const { succ,pred, add,mul,negate,sub,dbl, zero, lt0,le0,ge0,gt0,compare } = solution;
 
 const toBoolean = p => p (true) (false) ;
 const toOrdering = cmp => cmp ("LT") ("EQ") ("GT") ;
@@ -43,6 +43,11 @@ describe("NegaBinaryScott", () => {
       for ( let n=-10; n<=10; n++ )
         assert.strictEqual( toInt(add(m)(n)), m+n, `add ${ m } ${ n }` );
   });
+  it("mul", () => {
+    for ( let m=-10; m<=10; m++ )
+      for ( let n=-10; n<=10; n++ )
+        assert.strictEqual( toInt(mul(m)(n)), m*n, `mul ${ m } ${ n }` );
+  });
   it("negate", () => {
     for ( let n=-10; n<=10; n++ )
       assert.strictEqual( toInt(negate(n)), -n, `negate ${ n }` );
@@ -55,6 +60,10 @@ describe("NegaBinaryScott", () => {
     for ( let m=-10; m<=10; m++ )
       for ( let n=-10; n<=10; n++ )
         assert.strictEqual( toInt(sub(m)(n)), m-n, `sub ${ m } ${ n }` );
+  });
+  it("dbl", () => {
+    for ( let n=-10; n<=10; n++ )
+      assert.strictEqual( toInt(dbl(n)), 2*n, `dbl ${ n }` );
   });
   it("eq, uneq", () => {
     for ( let n=-10; n<=10; n++ )
