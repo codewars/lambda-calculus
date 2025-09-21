@@ -166,7 +166,7 @@ export function toInt(term) {
 }
 
 // parse :: String -> Env { String => Term }
-function parse(code) {
+export function parse(code) {
   function parseTerm(env,code) {
     function wrap(name,term) {
       const FV = term?.free?.() || new Set ; FV.delete("()");
